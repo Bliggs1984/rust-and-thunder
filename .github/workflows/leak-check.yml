@@ -1,0 +1,58 @@
+# Leak check: fails (and GitHub emails the owner) when something private reaches this public repo.
+# 1. Private files: dev notes, AI steering files, playtest logs and server setup must never be here.
+# 2. Private text: words listed in the repo secret BLOCKED_PATTERNS (an extended regex, matched without case).
+#    The list lives in a secret so this public file doesn't repeat it, and the log names only file:line.
+# 3. Secrets: gitleaks scans the whole history for keys and tokens.
+name: Leak check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 20 * * 0' # weekly, Monday morning in Melbourne, in case gitleaks learns new rules
+
+permissions:
+  contents: read
+  pull-requests: read # gitleaks lists a PR's commits
+
+jobs:
+  private-files-and-text:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: No private files
+        run: |
+          found=0
+          for p in CLAUDE.md AGENTS.md RESUME_NOTES.md docs deploy .claude tools/pc-link.mjs tools/pc-link.cmd tools/publish-public.sh; do
+            if [ -e "$p" ]; then echo "::error file=$p::Private file is in the public repo: $p"; found=1; fi
+          done
+          exit $found
+
+      - name: No private text
+        env:
+          BLOCKED: ${{ secrets.BLOCKED_PATTERNS }}
+        run: |
+          if [ -z "$BLOCKED" ]; then
+            echo "::warning::BLOCKED_PATTERNS secret not available (forks don't get it); private-text check skipped."
+            exit 0
+          fi
+          # -I skips binary files; print only file:line so the log never repeats the private text
+          hits="$(grep -rnIiE --exclude-dir=.git --exclude-dir=node_modules "$BLOCKED" . | cut -d: -f1,2 || true)"
+          if [ -n "$hits" ]; then
+            while IFS=: read -r f l; do echo "::error file=${f#./},line=$l::Private text found"; done <<< "$hits"
+            exit 1
+          fi
+          echo "No private text found."
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
