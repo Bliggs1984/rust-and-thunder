@@ -1,0 +1,616 @@
+// Campaign UI mockups: shared design-system code (pixel font, UI scale, pixel-art icons, portraits, tank).
+// Everything is drawn on a pixel grid and scaled by whole numbers.
+
+// ---------- UI scale ----------
+// One UI pixel = U screen px. 3 at 1080p, 2 at 720p, 4 at 1440p; narrow/portrait windows use the width.
+const U = Math.max(2, Math.min(4, Math.floor(Math.min(innerWidth / (innerWidth / innerHeight < 1.2 ? 360 : 600), innerHeight / 340))));
+document.documentElement.style.setProperty('--u', U + 'px');
+// type scale (glyph pixel size): small labels, body, headings, big numbers
+const S = { sm: 2, md: U, lg: U + 1, xl: 2 * U, xxl: 3 * U };
+
+// ---------- 5x7 font (src/art/font.ts) + a few extra glyphs the campaign needs ----------
+const GLYPHS = {
+  A: '.###.|#...#|#...#|#####|#...#|#...#|#...#', B: '####.|#...#|#...#|####.|#...#|#...#|####.',
+  C: '.###.|#...#|#....|#....|#....|#...#|.###.', D: '####.|#...#|#...#|#...#|#...#|#...#|####.',
+  E: '#####|#....|#....|####.|#....|#....|#####', F: '#####|#....|#....|####.|#....|#....|#....',
+  G: '.###.|#...#|#....|#.###|#...#|#...#|.####', H: '#...#|#...#|#...#|#####|#...#|#...#|#...#',
+  I: '.###.|..#..|..#..|..#..|..#..|..#..|.###.', J: '..###|...#.|...#.|...#.|#..#.|#..#.|.##..',
+  K: '#...#|#..##|#.##.|###..|#.##.|#..##|#...#', L: '#....|#....|#....|#....|#....|#....|#####',
+  M: '#...#|##.##|#.#.#|#.#.#|#...#|#...#|#...#', N: '#...#|#...#|##..#|#.#.#|#..##|#...#|#...#',
+  O: '.###.|#...#|#...#|#...#|#...#|#...#|.###.', P: '####.|#...#|#...#|####.|#....|#....|#....',
+  Q: '.###.|#...#|#...#|#...#|#.#.#|#..#.|.##.#', R: '####.|#...#|#...#|####.|#.#..|#..#.|#...#',
+  S: '.####|#....|#....|.###.|....#|....#|####.', T: '#####|..#..|..#..|..#..|..#..|..#..|..#..',
+  U: '#...#|#...#|#...#|#...#|#...#|#...#|.###.', V: '#...#|#...#|#...#|#...#|#...#|.#.#.|..#..',
+  W: '#...#|#...#|#...#|#.#.#|#.#.#|#.#.#|.#.#.', X: '#...#|#...#|.#.#.|..#..|.#.#.|#...#|#...#',
+  Y: '#...#|#...#|.#.#.|..#..|..#..|..#..|..#..', Z: '#####|....#|...#.|..#..|.#...|#....|#####',
+  0: '.###.|#...#|#...#|#...#|#...#|#...#|.###.', 1: '..#..|.##..|..#..|..#..|..#..|..#..|.###.',
+  2: '.###.|#...#|....#|...#.|..#..|.#...|#####', 3: '#####|...#.|..#..|...#.|....#|#...#|.###.',
+  4: '...#.|..##.|.#.#.|#..#.|#####|...#.|...#.', 5: '#####|#....|####.|....#|....#|#...#|.###.',
+  6: '..##.|.#...|#....|####.|#...#|#...#|.###.', 7: '#####|....#|...#.|..#..|.#...|.#...|.#...',
+  8: '.###.|#...#|#...#|.###.|#...#|#...#|.###.', 9: '.###.|#...#|#...#|.####|....#|...#.|.##..',
+  '-': '.....|.....|.....|#####|.....|.....|.....', '.': '.....|.....|.....|.....|.....|.##..|.##..',
+  ':': '.....|.##..|.##..|.....|.##..|.##..|.....', '!': '..#..|..#..|..#..|..#..|..#..|.....|..#..',
+  '?': '.###.|#...#|....#|...#.|..#..|.....|..#..', '/': '....#|...#.|...#.|..#..|.#...|.#...|#....',
+  x: '.....|.....|#...#|.#.#.|..#..|.#.#.|#...#', '<': '...#.|..#..|.#...|#....|.#...|..#..|...#.',
+  '>': '.#...|..#..|...#.|....#|...#.|..#..|.#...', '+': '.....|..#..|..#..|#####|..#..|..#..|.....',
+  "'": '..#..|..#..|.#...|.....|.....|.....|.....', ',': '.....|.....|.....|.....|.##..|..#..|.#...',
+  '·': '.....|.....|.....|..#..|.....|.....|.....', '↑': '..#..|.###.|#.#.#|..#..|..#..|..#..|..#..',
+  '↓': '..#..|..#..|..#..|..#..|#.#.#|.###.|..#..', '←': '.....|..#..|.#...|#####|.#...|..#..|.....',
+  '→': '.....|..#..|...#.|#####|...#.|..#..|.....', '◀': '...#.|..##.|.###.|####.|.###.|..##.|...#.',
+  '▶': '.#...|.##..|.###.|.####|.###.|.##..|.#...',
+  // new for the campaign (would be added to src/art/font.ts)
+  '%': '##..#|##..#|...#.|..#..|.#...|#..##|#..##', '"': '.#.#.|.#.#.|.#.#.|.....|.....|.....|.....',
+  '(': '...#.|..#..|.#...|.#...|.#...|..#..|...#.', ')': '.#...|..#..|...#.|...#.|...#.|..#..|.#...',
+  '=': '.....|.....|#####|.....|#####|.....|.....', '#': '.#.#.|.#.#.|#####|.#.#.|#####|.#.#.|.#.#.',
+  '&': '.##..|#..#.|#.#..|.#...|#.#.#|#..#.|.##.#',
+};
+const FONT_CHARS = Object.keys(GLYPHS);
+const FONT_IDX = new Map(FONT_CHARS.map((c, i) => [c, i]));
+const fontStyle = document.createElement('style');
+document.head.appendChild(fontStyle);
+const fontMade = new Set();
+function ensureScale(s) {
+  if (fontMade.has(s)) return;
+  fontMade.add(s);
+  const c = document.createElement('canvas');
+  c.width = FONT_CHARS.length * 6 * s;
+  c.height = 8 * s;
+  const g = c.getContext('2d');
+  g.fillStyle = '#fff';
+  FONT_CHARS.forEach((ch, i) => GLYPHS[ch].split('|').forEach((row, y) => [...row].forEach((on, x) => {
+    if (on === '#') g.fillRect((i * 6 + x) * s, y * s, s, s);
+  })));
+  const url = c.toDataURL();
+  const size = `${c.width}px ${c.height}px`;
+  fontStyle.textContent += `.px.s${s} i{width:${6 * s}px;height:${8 * s}px;-webkit-mask-image:url(${url});mask-image:url(${url});`
+    + `-webkit-mask-size:${size};mask-size:${size}}.px.s${s} i.sp{width:${4 * s}px;background:none}\n`;
+}
+/** One line of pixel text. */
+function T(text, s, cls = '') {
+  ensureScale(s);
+  let out = `<span class="px s${s} ${cls}">`;
+  for (const c0 of String(text)) {
+    const c = c0 === 'x' ? c0 : c0.toUpperCase();
+    const i = FONT_IDX.get(c);
+    if (c === ' ' || i === undefined) out += '<i class="sp"></i>';
+    else out += `<i style="-webkit-mask-position:-${i * 6 * s}px 0;mask-position:-${i * 6 * s}px 0"></i>`;
+  }
+  return out + '</span>';
+}
+/** Wrapped paragraph of pixel text (word spacing = one space, line gap = 3 px of the glyph scale). */
+function P(text, s, cls = '', extra = '') {
+  return `<div class="para" style="column-gap:${4 * s}px;row-gap:${3 * s}px;${extra}">${
+    String(text).split(' ').filter(Boolean).map((w) => T(w, s, cls)).join('')}</div>`;
+}
+const textW = (t, s) => (String(t).length * 6 - 1) * s;
+
+// ---------- palette for pixel art ----------
+const PAL = {
+  k: '#0b0c0e', w: '#f4efe2', l: '#c6ccd4', m: '#8a919b', d: '#4a4f58', y: '#2b2f36', z: '#1c1f24',
+  g: '#f8b800', h: '#ffe08a', o: '#c87000', R: '#983000',
+  r: '#f0482a', q: '#7a1a10', G: '#7cd83a', n: '#3a8a10', N: '#1f4a10',
+  b: '#6c9cff', B: '#3050c0', c: '#a8e0ff', t: '#8a5a2a', T: '#5a3a1a', e: '#e8d8a8',
+};
+
+// ---------- raster helpers ----------
+class Art {
+  constructor(w, h) { this.w = w; this.h = h; this.p = new Array(w * h).fill(null); }
+  get(x, y) { return x < 0 || y < 0 || x >= this.w || y >= this.h ? null : this.p[y * this.w + x]; }
+  set(x, y, c) { if (x >= 0 && y >= 0 && x < this.w && y < this.h) this.p[y * this.w + x] = c; }
+  rect(x, y, w, h, c) { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) this.set(i, j, c); }
+  ell(cx, cy, rx, ry, c, f = null) {
+    for (let y = Math.floor(cy - ry - 1); y <= cy + ry + 1; y++) for (let x = Math.floor(cx - rx - 1); x <= cx + rx + 1; x++) {
+      const dx = (x + 0.5 - cx) / rx, dy = (y + 0.5 - cy) / ry;
+      if (dx * dx + dy * dy <= 1) this.set(x, y, f ? f(x, y, dx, dy) : c);
+    }
+  }
+  line(x0, y0, x1, y1, r, c) {
+    const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) * 2) + 1;
+    for (let i = 0; i <= n; i++) {
+      const t = i / n;
+      this.ell(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, r, r, c);
+    }
+  }
+  /** strings of palette chars ('.' = skip), drawn at x,y */
+  rows(x, y, rows, map = {}) {
+    rows.forEach((r, j) => [...r].forEach((ch, i) => { if (ch !== '.') this.set(x + i, y + j, map[ch] || PAL[ch] || ch); }));
+  }
+  /** outline everything filled with 1 px (4-neighbour) */
+  outline(c = PAL.k) {
+    const add = [];
+    for (let y = 0; y < this.h; y++) for (let x = 0; x < this.w; x++) {
+      if (this.get(x, y) !== null) continue;
+      const n = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => {
+        const v = this.get(x + dx, y + dy);
+        return v !== null && v !== c;
+      });
+      if (n) add.push([x, y]);
+    }
+    add.forEach(([x, y]) => this.set(x, y, c));
+    return this;
+  }
+  url(scale = 1) {
+    const c = document.createElement('canvas');
+    c.width = this.w * scale; c.height = this.h * scale;
+    const g = c.getContext('2d');
+    for (let y = 0; y < this.h; y++) for (let x = 0; x < this.w; x++) {
+      const v = this.p[y * this.w + x];
+      if (v) { g.fillStyle = v; g.fillRect(x * scale, y * scale, scale, scale); }
+    }
+    return c.toDataURL();
+  }
+}
+const fromRows = (rows, map) => { const a = new Art(rows[0].length, rows.length); a.rows(0, 0, rows, map); return a; };
+/** <img> of an Art at a whole-number scale */
+function img(art, scale, cls = '', style = '') {
+  return `<img class="${cls}" src="${art.url(1)}" style="width:${art.w * scale}px;height:${art.h * scale}px;${style}">`;
+}
+
+// ---------- icons (16x16 unless noted) ----------
+const ICON_SRC = {
+  fpv: [
+    '................', '.kkk........kkk.', 'kmllk......kllmk', 'klwlk......klwlk', 'kmllkk....kkllmk', '.kkkdmk..kmdkkk.',
+    '....kdmkkmdk....', '.....kdrrdk.....', '.....kqrrqk.....', '....kdmkkmdk....', '.kkkdmk..kmdkkk.', 'kmllkk....kkllmk',
+    'klwlk......klwlk', 'kmllk......kllmk', '.kkk........kkk.', '................'],
+  ambush: [
+    '................', '................', '.....k...k......', '....kGk.kGk..k..', '.....kGkGk..kGk.', '....kkkGkkkkGk..',
+    '..kknnnGnnnnkk..', '.knnGnnnnnnnnnk.', '.knGnnnnnnnnnnk.', 'knGnnnnnnnnnnnnk', 'knnnnnnnnnnnnnnk', 'kkkkkkkkkkkkkkkk',
+    'kNNNNNNNNNNNNNNk', '.kkkkkkkkkkkkkk.', '................', '................'],
+  recon: [
+    '................', '.......kk.......', '......kcbk......', '......kbbk......', '......kbbk......', '.kkkkkkbbkkkkkk.',
+    'kbbbbbbbbbbbbbbk', 'kBBBBBBbbBBBBBBk', '.kkkkkkbbkkkkkk.', '......kbbk......', '......kbbk......', '......kbbk......',
+    '....kkkbbkkk....', '....kBBBBBBk....', '.....kkkkkk.....', '................'],
+  town: [
+    '................', '...........kkk..', '.......kk..kdk..', '......khgk.kdk..', '.....khggokkdk..', '....khggggokdk..',
+    '...khggggggok...', '..khggggggggok..', '.kkkkkkkkkkkkkk.', '..kwllkwwkllmk..', '..kwbbkwlkbbmk..', '..kwbbkwlkbbmk..',
+    '..kwllkwdkllmk..', '..kwllkwdkllmk..', '..kkkkkkkkkkkk..', '................'],
+  depot: [
+    '................', '................', '..kkkkk.........', '.kmllmmk.kkkkk..', '.kkkkkkkkmllmmk.', '.kmlwmmkkkkkkkk.',
+    '.kmlwmmkkmlwmmk.', '.kkkkkkkkmlwmmk.', '.kmlwmmkkkkkkkk.', '.kmlwmmkkmlwmmk.', '.kkkkkkkkmlwmmk.', '.kmlwmmkkkkkkkk.',
+    '.kmllmmkkmlwmmk.', '..kkkkk.kmllmmk.', '.........kkkkk..', '................'],
+  event: [
+    '................', '...kkkkkkkkk....', '...kwwwwwwwlk...', '...kwwwrrwwllk..', '...kwwwrrwwwwk..', '...kwwwrrwwwwk..',
+    '...kwwwrrwwwwk..', '...kwwwrrwwwwk..', '...kwwwwwwwwwk..', '...kwwwrrwwwwk..', '...kwwwrrwwwwk..', '...kwwwwwwwwwk..',
+    '...kllwwwwwwlk..', '...kkkkkkkkkkk..', '................', '................'],
+  flag: [
+    '................', '..kk............', '..klkkkkkkk.....', '..klkhhgggokkk..', '..klkhgggggggok.', '..klkggggggggok.',
+    '..klkggggggggk..', '..klkoggggokk...', '..klkkkoookk....', '..klk..kkk......', '..klk...........', '..klk...........',
+    '..klk...........', '.kkdkk..........', '.kdddk..........', '.kkkkk..........'],
+  armour: [
+    '................', '................', '..kkkkkkkkkkkk..', '.kwllllllllllmk.', '.kldllllllldmmk.', '.kllllllllllmmk.',
+    '.klllllRRllllmk.', '.kllllllRllllmk.', '.kllllllllllmmk.', '.kllllllllllmmk.', '.kllllllllllmmk.', '.kldllllllldmmk.',
+    '.klmmmmmmmmmmmk.', '..kkkkkkkkkkkk..', '................', '................'],
+  engine: [
+    '................', '....kkkkkkkk....', '....khhhgggk....', '....kkkkkkkk....', '....kllllllk....', '....kkkkkkkk....',
+    '....kllllmmk....', '....kllllmmk....', '....kkkkkkkk....', '......kmmk......', '.....kmllmk.....', '......kmmk......',
+    '......kmmk......', '.....kmmmmk.....', '....kmmkkmmk....', '....kkk..kkk....'],
+  barrel: [
+    '................', '................', '................', '................', '................', '...........kkkk.',
+    'kkkk.......kwlk.', 'kmdkkkkkkkkklmk.', 'kmdkwwwwwwwklmk.', 'kmdkllllllllkkk.', 'kmdkmmmmmmmklmk.', 'kmdkkkkkkkkklmk.',
+    'kkkk.......kmmk.', '...........kkkk.', '................', '................'],
+  tracks: [
+    '................', '................', '................', '................', '..kkkkkkkkkkkk..', '.kmdmdmdmdmdmdk.',
+    'kdkkkkkkkkkkkkdk', 'kmkwlkkwlkkwlkmk', 'kdklmkklmkklmkdk', 'kmkkkkkkkkkkkkmk', '.kdmdmdmdmdmdmk.', '..kkkkkkkkkkkk..',
+    '................', '................', '................', '................'],
+  jammer: [
+    '................', '......kkkk......', '.k....krrk....k.', 'kbk...kkkk...kbk', 'kbk.k..dm..k.kbk', 'kbkkbk.dm.kbkkbk',
+    'kbkkbk.dm.kbkkbk', 'kbk.k..dm..k.kbk', '.k.....dm.....k.', '......kmmk......', '.....kmllmk.....', '....kkkkkkkk....',
+    '....kllllllk....', '....kdlrGldk....', '....kmmmmmmk....', '....kkkkkkkk....'],
+  plough: [
+    '................', '................', '................', '.kkkkkkkkkkkkkk.', 'kwllllllllllllmk', 'kmmmmmmmmmmmmmmk',
+    'kkkkkkkkkkkkkkkk', '.kmk.kmk.kmk.kmk', '.kmk.kmk.kmk.kmk', '.kmk.kmk.kmk.kmk', '..k...k...k...k.', '................',
+    '................', '................', '................', '................'],
+  lock: [
+    '....kkkk....', '...kmllmk...', '..kmk..kmk..', '..kmk..kmk..', '.kkkkkkkkkk.', '.kgghggggok.',
+    '.kghgkkgook.', '.kgggkkgook.', '.kgggkkgook.', '.kgoooooook.', '.kkkkkkkkkk.'],
+  chev: ['....k....', '...khk...', '..khghk..', '.khgogok.', 'kgok.kogk', 'kok...kok', 'kk.....kk'],
+  diamond: ['....k....', '...khk...', '..khgok..', '.khgggok.', 'khgggggok', '.kggggok.', '..kgook..', '...kok...', '....k....'],
+  arrow: ['....k....', '....kk...', 'kkkkkhk..', 'khhhhggk.', 'kgggggggk', 'koooogok.', 'kkkkkok..', '....kk...', '....k....'],
+  house: ['....k....', '...kgk...', '..kgggk..', '.kgggggk.', 'kkkkkkkkk', '.kwwkwwk.', '.kwwkwwk.', '.kkkkkkk.'],
+  signal: ['......kkk', '......kgk', '...kkkkgk', '...kgkkgk', 'kkkkgkkgk', 'kgkkgkkgk', 'kgkkgkkgk', 'kkkkkkkkk'],
+  skullq: [
+    '....kkkkkkk.....', '...krrrrrrrk....', '..krrkkkkkrrk...', '..krk....krrk...', '..kkk...krrk....', '.......krrk.....',
+    '......krrk......', '......krk.......', '......kkk.......', '................', '......krk.......', '......kkk.......'],
+};
+const iconCache = {};
+function iconArt(name, remap = null) {
+  const key = name + JSON.stringify(remap || {});
+  if (iconCache[key]) return iconCache[key];
+  let a;
+  if (ICON_SRC[name]) a = fromRows(ICON_SRC[name], remap ? Object.fromEntries(Object.entries(remap).map(([k, v]) => [k, PAL[v] || v])) : {});
+  else a = PROC[name](remap);
+  iconCache[key] = a;
+  return a;
+}
+function icon(name, scale = U, cls = '', remap = null, style = '') { return img(iconArt(name, remap), scale, cls, style); }
+
+// procedural icons
+const PROC = {
+  scrap(remap) { // hex nut
+    const a = new Art(16, 16);
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
+      const px = x + 0.5 - 8, py = y + 0.5 - 8;
+      const hex = Math.max(Math.abs(py) * 1.15, Math.abs(px) * 0.58 + Math.abs(py) * 0.58);
+      if (hex > 6.6) continue;
+      const r = Math.hypot(px, py);
+      if (r < 2.4) continue;
+      let c = PAL.l;
+      if (r < 3.5) c = px + py > 0 ? PAL.w : PAL.d; // hole bevel (lit from top-left)
+      else if (px + py < -6) c = PAL.w;
+      else if (px + py > 4) c = PAL.m;
+      if (hex > 5.6 && px + py > 2) c = PAL.d;
+      a.set(x, y, c);
+    }
+    return a.outline();
+  },
+  parts() { // cog
+    const a = new Art(16, 16);
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
+      const px = x + 0.5 - 8, py = y + 0.5 - 8;
+      const r = Math.hypot(px, py), ang = Math.atan2(py, px);
+      const tooth = Math.cos(ang * 8) > 0.25;
+      if (r > (tooth ? 7 : 5.2) || r < 2) continue;
+      let c = PAL.g;
+      if (r < 3) c = px + py > 0 ? PAL.h : PAL.R;
+      else if (px + py < -4) c = PAL.h;
+      else if (px + py > 3.5) c = PAL.o;
+      a.set(x, y, c);
+    }
+    return a.outline();
+  },
+  repair() { // spanner
+    const a = new Art(16, 16);
+    a.line(3.5, 12.5, 10, 6, 1.3, PAL.l);
+    a.ell(11, 5, 3.6, 3.6, PAL.l);
+    a.ell(3, 13, 2, 2, PAL.l);
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
+      const px = x + 0.5 - 11, py = y + 0.5 - 5;
+      if (Math.hypot(px, py) < 2 && true) a.set(x, y, null);
+      if (px - py > 1 && px + py < 3 && px + py > -3 && px > 0) a.set(x, y, null); // jaw opening up-right
+    }
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) if (a.get(x, y)) {
+      if (!a.get(x + 1, y + 1) || !a.get(x, y + 1)) a.set(x, y, PAL.m);
+      if (!a.get(x - 1, y - 1) && a.get(x, y) === PAL.l) a.set(x, y, PAL.w);
+    }
+    return a.outline();
+  },
+  mine() {
+    const a = new Art(12, 12);
+    for (const [x, y] of [[5, 0], [6, 0], [0, 5], [0, 6], [11, 5], [11, 6], [5, 11], [6, 11], [1, 1], [10, 1], [1, 10], [10, 10]]) a.set(x, y, PAL.m);
+    a.ell(6, 6, 4.6, 4.6, PAL.d, (x, y, dx, dy) => (dx + dy < -0.6 ? PAL.m : dx + dy > 0.7 ? PAL.y : PAL.d));
+    a.set(5, 5, PAL.r); a.set(6, 5, PAL.r);
+    return a.outline();
+  },
+  tank16(remap) { // small top-down tank for map markers
+    const col = remap?.body || 'gold';
+    const C = col === 'green' ? [PAL.G, '#c4f59a', PAL.n] : col === 'red' ? [PAL.r, '#ffb09a', PAL.q] : [PAL.g, PAL.h, PAL.o];
+    const a = new Art(16, 16);
+    for (let y = 3; y <= 14; y++) { a.rect(1, y, 4, 1, y % 2 ? PAL.m : PAL.d); a.rect(11, y, 4, 1, y % 2 ? PAL.m : PAL.d); }
+    a.rect(4, 4, 8, 10, C[0]); a.rect(4, 4, 8, 1, C[1]); a.rect(4, 13, 8, 1, C[2]);
+    a.ell(8, 9.5, 3.2, 3.2, C[0], (x, y, dx, dy) => (dx + dy < -0.5 ? C[1] : dx + dy > 0.6 ? C[2] : C[0]));
+    a.rect(7, 0, 2, 7, PAL.l); a.set(8, 1, PAL.m); a.set(8, 2, PAL.m);
+    return a.outline();
+  },
+  dpad(remap) { // 11x11 d-pad, remap.dir = up/left/right/down highlights one arm
+    const a = new Art(11, 11);
+    const hi = remap?.color === 'green' ? [PAL.G, PAL.n] : [PAL.g, PAL.o];
+    a.rect(4, 1, 3, 9, PAL.d); a.rect(1, 4, 9, 3, PAL.d);
+    const arms = { up: [4, 1, 3, 3], down: [4, 7, 3, 3], left: [1, 4, 3, 3], right: [7, 4, 3, 3] };
+    if (remap?.dir) { const [x, y, w, h] = arms[remap.dir]; a.rect(x, y, w, h, hi[0]); }
+    a.set(5, 5, PAL.y);
+    return a.outline();
+  },
+};
+
+// ---------- tank art (32x32, top-down, parts bolted on) ----------
+function tankArt(parts = {}, colour = 'gold') {
+  const C = colour === 'green'
+    ? { b: PAL.G, h: '#c4f59a', s: PAL.n, d: PAL.N }
+    : { b: PAL.g, h: PAL.h, s: PAL.o, d: PAL.R };
+  const a = new Art(32, 32);
+  // treads
+  const tw = parts.tracks ? 7 : 6;
+  for (const sx of [9 - tw, 23]) {
+    for (let y = 5; y <= 30; y++) {
+      for (let x = sx; x < sx + tw; x++) {
+        let c = (y % 2) ? PAL.m : PAL.d;
+        if (x === sx || x === sx + tw - 1) c = (y % 2) ? PAL.d : PAL.y;
+        if (y === 5 || y === 30) c = PAL.y;
+        a.set(x, y, c);
+      }
+      if (parts.tracks && y % 3 === 0) { a.set(sx - 1, y, PAL.l); a.set(sx + tw, y, PAL.l); }
+    }
+  }
+  // hull
+  for (let y = 8; y <= 28; y++) for (let x = 9; x <= 22; x++) {
+    let c = C.b;
+    if (y === 8 || x === 9) c = C.h;
+    if (y === 28 || x === 22) c = C.s;
+    a.set(x, y, c);
+  }
+  // engine deck (rear)
+  for (let y = 24; y <= 27; y++) for (let x = 11; x <= 20; x++) a.set(x, y, (x % 2) ? C.s : C.d);
+  if (parts.engine) {
+    for (let y = 24; y <= 27; y++) for (let x = 11; x <= 20; x++) a.set(x, y, (x % 2) ? PAL.m : PAL.y);
+    a.rect(10, 28, 2, 3, PAL.l); a.set(10, 30, PAL.y); a.set(11, 30, PAL.y);
+    a.rect(20, 28, 2, 3, PAL.l); a.set(20, 30, PAL.y); a.set(21, 30, PAL.y);
+  }
+  // armour: mismatched steel plates bolted to the front and a rusty one on the side
+  if (parts.armour) {
+    a.rect(9, 8, 14, 3, PAL.l); a.rect(9, 10, 14, 1, PAL.m);
+    [10, 13, 18, 21].forEach((x) => a.set(x, 9, PAL.d));
+    a.rect(9, 13, 2, 7, PAL.R); a.set(9, 14, PAL.d); a.set(9, 18, PAL.d);
+    a.rect(21, 15, 2, 6, PAL.m); a.set(22, 16, PAL.d); a.set(22, 19, PAL.d);
+  }
+  // turret
+  a.ell(15.5, 17, 7, 6.6, PAL.k);
+  a.ell(15.5, 17, 6, 5.6, C.b, (x, y, dx, dy) => (dx + dy < -0.6 ? C.h : dx + dy > 0.6 ? C.s : C.b));
+  a.ell(18, 19.5, 1.7, 1.7, C.d); a.set(17, 19, C.s);
+  // plough in front of the tracks
+  if (parts.plough) {
+    a.rect(3, 3, 26, 2, PAL.m); a.rect(3, 3, 26, 1, PAL.l);
+    for (let x = 3; x <= 28; x += 3) { a.set(x, 1, PAL.m); a.set(x, 2, PAL.m); }
+  }
+  // barrel
+  const top = parts.barrel ? 0 : 3;
+  for (let y = top; y <= 12; y++) { a.set(15, y, PAL.l); a.set(16, y, PAL.m); }
+  if (parts.barrel) { a.rect(14, 0, 4, 2, PAL.m); a.rect(14, 0, 4, 1, PAL.l); a.rect(14, 6, 4, 2, PAL.m); a.set(14, 6, PAL.l); }
+  // jammer: radio box + whip antennas
+  if (parts.jammer) {
+    a.rect(19, 20, 3, 3, PAL.y); a.set(20, 21, PAL.r);
+    a.line(21.5, 20.5, 26, 13, 0.4, PAL.k);
+  }
+  return a.outline();
+}
+
+// ---------- portraits (32x32) ----------
+const SKIN = {
+  light: ['#f4c8a0', '#e0a878', '#b07850'], mid: ['#e8b088', '#c88a60', '#9a6040'], tan: ['#d8a070', '#b47c50', '#845434'],
+};
+function portraitArt(p) {
+  const a = new Art(32, 32);
+  const [sk, sm, sd] = SKIN[p.skin || 'mid'];
+  const hair = p.hair || ['#5a3a1a', '#3a2410'];
+  const cl = p.clothes || ['#5a6a3a', '#3e4a28'];
+  // torso
+  for (let y = 24; y < 32; y++) {
+    const hw = Math.min(15, 8 + (y - 24) * 1.4);
+    for (let x = 0; x < 32; x++) {
+      const d = x + 0.5 - 16;
+      if (Math.abs(d) > hw) continue;
+      a.set(x, y, d > hw - 4 ? cl[1] : cl[0]);
+    }
+  }
+  // collar / shirt
+  if (p.collar) for (let y = 24; y < 29; y++) for (let x = 13; x <= 18; x++) if (Math.abs(x + 0.5 - 16) < (y - 23) * 0.8) a.set(x, y, p.collar);
+  // neck
+  a.rect(13, 20, 6, 5, sm);
+  a.rect(13, 23, 6, 1, sd);
+  // head
+  const cx = 16, cy = 13.5;
+  for (let y = 4; y < 23; y++) for (let x = 6; x < 26; x++) {
+    const dx = (x + 0.5 - cx) / 6.7;
+    const dy = (y + 0.5 - cy) / 8.2;
+    const jaw = y > 17 ? 1 + (y - 17) * 0.09 : 1;
+    if ((dx * jaw) ** 2 + dy * dy > 1) continue;
+    let c = sk;
+    if (dx > 0.62) c = sm;
+    if (dx < -0.7) c = sm;
+    if (y >= 20) c = sm;
+    a.set(x, y, c);
+  }
+  // ears
+  a.rect(8, 13, 2, 3, sm); a.set(8, 14, sd);
+  a.rect(23, 13, 2, 3, sm); a.set(24, 14, sd);
+  // eyes + brows
+  const eyeY = 14;
+  a.set(11, eyeY, '#ffffff'); a.set(12, eyeY, '#1a1410');
+  a.set(19, eyeY, '#1a1410'); a.set(20, eyeY, '#ffffff');
+  a.set(11, eyeY + 1, sm); a.set(12, eyeY + 1, sm); a.set(19, eyeY + 1, sm); a.set(20, eyeY + 1, sm);
+  const brow = p.brow || hair[1];
+  a.rect(10, eyeY - 2, 4, 1, brow); a.rect(18, eyeY - 2, 4, 1, brow);
+  if (p.frown) { a.set(13, eyeY - 1, brow); a.set(18, eyeY - 1, brow); }
+  // nose
+  a.set(16, 15, sm); a.set(16, 16, sm); a.set(15, 17, sd); a.set(16, 17, sd);
+  // mouth
+  const lip = '#8a3a2a';
+  if (p.smile) { a.rect(14, 19, 4, 1, lip); a.set(13, 18, lip); a.set(18, 18, lip); }
+  else a.rect(14, 19, 4, 1, lip);
+  if (p.blush) { a.set(10, 17, '#e88a78'); a.set(21, 17, '#e88a78'); }
+  if (p.freckles) [[11, 16], [13, 17], [19, 16], [21, 17]].forEach(([x, y]) => a.set(x, y, sd));
+  if (p.wrinkles) { a.set(10, 15, sd); a.set(21, 15, sd); a.set(13, 20, sd); a.set(18, 20, sd); }
+  if (p.extra) p.extra(a, { sk, sm, sd, hair, cl });
+  // silhouette outline against the background, then background
+  a.outline();
+  const out = new Art(32, 32);
+  const bg = p.bg || ['#2b2f36', '#22252b'];
+  for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) out.set(x, y, y < 22 ? bg[0] : bg[1]);
+  for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) { const v = a.get(x, y); if (v) out.set(x, y, v); }
+  return out;
+}
+
+const CREW = {
+  mykola: {
+    name: 'MYKOLA', call: 'TRACTOR', role: 'DRIVER', lv: 4, xp: [340, 500],
+    perk: ['PLOUGHMAN', 'MUD, FIELDS AND RUBBLE DO NOT SLOW THE TANK.'],
+    ability: null, quip: 'DROVE A COMBINE FOR 30 YEARS. THIS ONE SHOOTS BACK.',
+    art: { skin: 'tan', hair: ['#9aa0a8', '#6a707a'], brow: '#c6ccd4', clothes: ['#4a5634', '#343d24'], collar: '#2a2418', wrinkles: true, bg: ['#3a3220', '#2c2618'],
+      extra(a) { // padded tanker helmet + goggles + big moustache
+        const L = '#4a3020', Ld = '#2e1c12', Lh = '#6a4630';
+        for (let y = 3; y < 13; y++) for (let x = 7; x < 25; x++) {
+          const dx = (x + 0.5 - 16) / 8.6, dy = (y + 0.5 - 12) / 8.6;
+          if (dx * dx + dy * dy <= 1) a.set(x, y, (x === 12 || x === 16 || x === 20) ? Ld : x < 12 ? Lh : L);
+        }
+        a.rect(7, 11, 3, 8, L); a.rect(22, 11, 3, 8, Ld); a.rect(7, 18, 3, 1, Ld); a.rect(22, 18, 3, 1, Ld);
+        // goggles on the brow of the helmet
+        a.rect(9, 9, 14, 1, '#1a1410');
+        [[10, 8], [17, 8]].forEach(([x, y]) => { a.rect(x, y, 5, 3, '#8a919b'); a.rect(x + 1, y + 1, 3, 1, '#6c9cff'); a.set(x + 1, y + 1, '#a8e0ff'); });
+        // moustache
+        a.rect(12, 18, 8, 1, '#c6ccd4'); a.rect(11, 19, 3, 1, '#9aa0a8'); a.rect(18, 19, 3, 1, '#9aa0a8'); a.rect(14, 18, 4, 1, '#f4efe2');
+      } },
+  },
+  halyna: {
+    name: 'HALYNA', call: 'AUNTIE', role: 'GUNNER', lv: 3, xp: [210, 400],
+    perk: ['STEADY HAND', 'FIRST SHOT AFTER STOPPING HITS 50% HARDER.'],
+    ability: 'ambush', quip: 'TAUGHT MATHS FOR 25 YEARS. NOW SHE TEACHES BALLISTICS.',
+    art: { skin: 'light', hair: ['#c6ccd4', '#8a919b'], clothes: ['#5a6a3a', '#3e4a28'], collar: '#c8b890', smile: true, wrinkles: true, bg: ['#2a3428', '#20281e'],
+      extra(a, c) { // grey bob + round glasses + earring
+        const H = c.hair[0], Hd = c.hair[1];
+        for (let y = 3; y < 13; y++) for (let x = 7; x < 25; x++) {
+          const dx = (x + 0.5 - 16) / 8.3, dy = (y + 0.5 - 12) / 8.3;
+          if (dx * dx + dy * dy <= 1) a.set(x, y, x > 19 ? Hd : H);
+        }
+        a.rect(7, 11, 3, 8, H); a.rect(22, 11, 3, 8, Hd); a.rect(7, 18, 2, 1, Hd); a.rect(23, 18, 2, 1, Hd);
+        a.rect(10, 10, 6, 1, Hd); a.set(15, 11, H); // side parting
+        for (const x of [10, 18]) { a.rect(x, 13, 4, 1, '#4a4f58'); a.rect(x, 15, 4, 1, '#4a4f58'); a.set(x, 14, '#4a4f58'); a.set(x + 3, 14, '#4a4f58'); }
+        a.set(11, 14, '#ffffff'); a.set(12, 14, '#1a1410'); a.set(19, 14, '#1a1410'); a.set(20, 14, '#ffffff');
+        a.rect(14, 14, 4, 1, '#4a4f58');
+        a.set(23, 17, '#f8b800');
+      } },
+  },
+  yurko: {
+    name: 'YURKO', call: 'SPANNER', role: 'MECHANIC', lv: 5, xp: [620, 700],
+    perk: ['SCRAP SENSE', 'WRECKS DROP 25% MORE SCRAP.'],
+    ability: 'repair', quip: 'IF IT RATTLES, IT IS FINE. IF IT STOPS RATTLING, RUN.',
+    art: { skin: 'mid', hair: ['#5a3a1a', '#3a2410'], clothes: ['#3a5a8a', '#2a4066'], collar: '#c8b890', bg: ['#3a2a20', '#2c2018'],
+      extra(a, c) { // knit beanie + stubble + grease smudge + overall straps
+        const B = '#c87000', Bd = '#983000', Bh = '#f0a040';
+        for (let y = 2; y < 11; y++) for (let x = 7; x < 25; x++) {
+          const dx = (x + 0.5 - 16) / 8.4, dy = (y + 0.5 - 10) / 8;
+          if (dx * dx + dy * dy <= 1) a.set(x, y, x % 2 ? B : (x < 13 ? Bh : Bd));
+        }
+        a.rect(7, 9, 18, 3, Bd); a.rect(7, 9, 18, 1, B);
+        a.rect(8, 12, 2, 3, c.hair[0]); a.rect(22, 12, 2, 3, c.hair[1]);
+        for (let y = 17; y < 22; y++) for (let x = 9; x < 23; x++) if (a.get(x, y) && (x + y) % 2 === 0 && !(y === 19 && x >= 14 && x <= 17)) a.set(x, y, c.sd);
+        a.set(20, 16, '#2b2f36'); a.set(21, 16, '#2b2f36'); a.set(20, 17, '#4a4f58');
+        a.rect(11, 26, 2, 6, '#2a4066'); a.rect(19, 26, 2, 6, '#2a4066'); a.set(11, 27, '#c6ccd4'); a.set(20, 27, '#c6ccd4');
+      } },
+  },
+  sofia: {
+    name: 'SOFIA', call: 'WASP', role: 'DRONE OP', lv: 2, xp: [90, 300],
+    perk: ['HOT GLUE', 'FPV CHARGES COST 20% LESS SCRAP TO CRAFT.'],
+    ability: 'fpv', quip: 'BUILT HER FIRST DRONE OUT OF A VACUUM CLEANER. IT STILL SUCKS. LITERALLY.',
+    art: { skin: 'light', hair: ['#3a2418', '#22140c'], clothes: ['#4a6a4a', '#344a34'], collar: '#2b2f36', freckles: true, bg: ['#203040', '#182430'],
+      extra(a, c) { // dark hair with bun, fringe, headset with mic
+        const H = c.hair[0], Hd = c.hair[1];
+        a.ell(16, 3.5, 3.5, 2.6, Hd);
+        for (let y = 4; y < 13; y++) for (let x = 7; x < 25; x++) {
+          const dx = (x + 0.5 - 16) / 8.2, dy = (y + 0.5 - 12.5) / 8.2;
+          if (dx * dx + dy * dy <= 1) a.set(x, y, x > 18 ? Hd : H);
+        }
+        a.rect(9, 11, 6, 1, H); a.rect(8, 11, 2, 6, H); a.rect(22, 11, 2, 6, Hd);
+        a.rect(7, 5, 18, 1, '#4a4f58'); a.set(7, 6, '#4a4f58'); a.set(24, 6, '#4a4f58');
+        a.rect(6, 7, 1, 5, '#4a4f58'); a.rect(25, 7, 1, 5, '#4a4f58');
+        a.rect(5, 11, 4, 6, '#1c1f24'); a.rect(5, 12, 1, 4, '#4a4f58');
+        a.rect(23, 11, 4, 6, '#1c1f24'); a.rect(26, 12, 1, 4, '#4a4f58');
+        a.line(7, 16.5, 12, 19.5, 0.3, '#4a4f58'); a.set(12, 19, '#f0482a');
+      } },
+  },
+  taras: {
+    name: 'TARAS', call: 'OWL', role: 'SCOUT', lv: 1, xp: [40, 200], recruit: true,
+    perk: ['NIGHT EYES', 'MINES WITHIN 3 TILES SHOW UP ON THEIR OWN.'],
+    ability: 'recon', quip: 'SAYS LITTLE. SEES EVERYTHING. NOBODY KNOWS WHERE HE SLEEPS.',
+    art: { skin: 'mid', hair: ['#5a3a1a', '#3a2410'], clothes: ['#56603a', '#3a4226'], collar: '#3a4226', bg: ['#26302a', '#1c2420'],
+      extra(a, c) { // boonie hat + full beard + face paint + camo
+        const Hh = '#6a7448', Hm = '#56603a', Hd = '#3a4226';
+        a.ell(16, 7.5, 7.5, 5, Hm, (x, y, dx) => (dx < -0.4 ? Hh : dx > 0.5 ? Hd : Hm));
+        a.rect(4, 9, 24, 2, Hd); a.rect(4, 9, 24, 1, Hm);
+        a.rect(8, 7, 16, 1, Hd);
+        for (let y = 16; y < 23; y++) for (let x = 8; x < 24; x++) {
+          const dx = (x + 0.5 - 16) / 7.4, dy = (y + 0.5 - 15) / 8;
+          if (dx * dx + dy * dy <= 1 && !(y === 19 && x >= 14 && x <= 17) && !(y < 18 && x > 12 && x < 19)) a.set(x, y, (x + y) % 3 ? c.hair[0] : c.hair[1]);
+        }
+        a.rect(13, 18, 6, 1, c.hair[0]);
+        a.rect(9, 16, 4, 1, '#3a4226'); a.rect(19, 16, 4, 1, '#3a4226');
+        [[4, 27], [9, 29], [22, 26], [26, 29], [15, 30], [12, 26]].forEach(([x, y]) => { a.set(x, y, '#2a3018'); a.set(x + 1, y, '#2a3018'); });
+      } },
+  },
+  koval: {
+    name: 'MAJOR KOVAL', call: 'HQ', role: 'COMMAND',
+    art: { skin: 'light', hair: ['#2a1c14', '#1a100a'], clothes: ['#4a5634', '#343d24'], collar: '#c8b890', frown: true, bg: ['#1c2838', '#16202c'],
+      extra(a, c) { // field cap with badge, hair, radio handset, gold collar tabs
+        const Cm = '#56603a', Cd = '#3a4226', Ch = '#6a7448';
+        a.rect(8, 11, 2, 6, c.hair[0]); a.rect(22, 11, 2, 6, c.hair[1]);
+        for (let y = 2; y < 10; y++) for (let x = 7; x < 25; x++) if (Math.abs(x + 0.5 - 16) <= 8 - (y < 4 ? 4 - y : 0)) a.set(x, y, x < 11 ? Ch : x > 21 ? Cd : Cm);
+        a.rect(7, 9, 18, 2, Cd); a.rect(9, 11, 14, 1, '#1a1410');
+        a.rect(15, 5, 2, 2, '#f8b800'); a.set(15, 5, '#ffe08a');
+        a.rect(23, 12, 3, 9, '#1c1f24'); a.rect(24, 13, 1, 7, '#4a4f58'); a.rect(22, 20, 3, 2, '#1c1f24');
+        a.rect(10, 26, 2, 2, '#f8b800'); a.rect(20, 26, 2, 2, '#f8b800');
+      } },
+  },
+};
+const portraitCache = {};
+function portrait(id, scale, cls = '', style = '') {
+  portraitCache[id] = portraitCache[id] || portraitArt(CREW[id].art);
+  return img(portraitCache[id], scale, cls, style);
+}
+
+// ---------- pixel cooldown sweep / progress ring ----------
+/** n x n overlay: the part of a clock wipe not yet recharged is darkened (frac = recharged 0..1) */
+function sweepArt(n, frac) {
+  const a = new Art(n, n);
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const ang = (Math.atan2(x + 0.5 - n / 2, -(y + 0.5 - n / 2)) / (Math.PI * 2) + 1) % 1;
+    if (ang >= frac) a.set(x, y, 'rgba(6,7,9,0.72)');
+  }
+  // bright edge on the wipe line
+  for (let r = 1; r < n / 2; r++) {
+    const t = frac * Math.PI * 2;
+    a.set(Math.floor(n / 2 + Math.sin(t) * r), Math.floor(n / 2 - Math.cos(t) * r), 'rgba(255,224,138,0.9)');
+  }
+  return a;
+}
+/** ring of `segs` blocks, `on` of them lit */
+function ringArt(n, frac, on = PAL.g, off = PAL.y) {
+  const a = new Art(n, n);
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const dx = x + 0.5 - n / 2, dy = y + 0.5 - n / 2, r = Math.hypot(dx, dy);
+    if (r > n / 2 - 0.2 || r < n / 2 - 2.6) continue;
+    const ang = (Math.atan2(dx, -dy) / (Math.PI * 2) + 1) % 1;
+    const seg = Math.floor(ang * 16);
+    if ((ang * 16) % 1 < 0.14) continue;
+    a.set(x, y, seg < Math.round(frac * 16) ? on : off);
+  }
+  return a.outline();
+}
+
+// ---------- patterns ----------
+function pattern(rows, map = {}) { return `url(${fromRows(rows, map).url(1)})`; }
+const root = document.documentElement.style;
+root.setProperty('--hazard', pattern(['yyzzzzyy', 'yzzzzyyy', 'zzzzyyyy', 'zzzyyyyz', 'zzyyyyzz', 'zyyyyzzz', 'yyyyzzzz', 'yyyzzzzy'], { y: '#30343b', z: '#272a30' }));
+root.setProperty('--hazard-gold', pattern(['yyzzzzyy', 'yzzzzyyy', 'zzzzyyyy', 'zzzyyyyz', 'zzyyyyzz', 'zyyyyzzz', 'yyyyzzzz', 'yyyzzzzy'], { y: '#4a3810', z: '#3a2c08' }));
+// letterbox floor: faint tread plate
+document.body.style.backgroundImage = pattern([
+  'aaaaaaaaaaaaaaaa', 'aaabaaaaaaaaaaaa', 'aabaaaaaaaaaaaaa', 'abaaaaaaaaaaaaaa', 'aaaaaaaaaaaaaaaa', 'aaaaaaaaaaaaaaaa',
+  'aaaaaaaaaaaaaaaa', 'aaaaaaaaaaaaaaaa', 'aaaaaaaaaaaaaaaa', 'aaaaaaaaaaabaaaa', 'aaaaaaaaaaaabaaa', 'aaaaaaaaaaaaabaa',
+  'aaaaaaaaaaaaaaaa', 'aaaaaaaaaaaaaaaa', 'aaaaaaaaaaaaaaaa', 'aaaaaaaaaaaaaaaa'], { a: '#0c0d10', b: '#14161a' });
+document.body.style.backgroundSize = `${16 * U}px ${16 * U}px`;
+
+// ---------- shared widgets ----------
+const kc = (k, cls = '') => `<span class="kc ${cls}">${T(k, S.sm)}</span>`;
+function hints(list) {
+  return list.map(([keys, label]) => `<span>${keys.map((k) => kc(k)).join('')}${T(label, S.sm)}</span>`).join('');
+}
+function segs(n, on, w, h, cls = '', mark = {}) {
+  return `<span class="segs ${cls}">${Array.from({ length: n }, (_, i) =>
+    `<i class="${i < on ? 'on' : ''} ${mark[i] || ''}" style="width:${w * U}px;height:${h * U}px"></i>`).join('')}</span>`;
+}
+/** scrap / parts counters */
+function resource(name, value, delta = '') {
+  return `<span class="row" style="gap:${2 * U}px">${icon(name, U)}${T(value, S.lg, 'c-ink')}${delta ? T(delta, S.sm, 'c-green') : ''}</span>`;
+}
+function resourceStrip(scrap, parts, extra = '') {
+  return `<div class="plate flat" style="display:flex;align-items:center;gap:${8 * U}px;padding:${2 * U}px ${5 * U}px">
+    ${resource('scrap', scrap)}${resource('parts', parts)}${extra}</div>`;
+}
+const CAMP_TABS = ['GARAGE', 'CREW', 'MAP'];
+function campHeader(active, place) {
+  return `<div class="row" style="position:absolute;left:${8 * U}px;right:${8 * U}px;top:${8 * U}px;justify-content:space-between">
+    <div class="row" style="gap:${6 * U}px">
+      <div class="col" style="gap:${2 * U}px">${T('CAMP', S.sm, 'c-mute')}<span class="sh">${T(place, S.lg, 'c-ink')}</span></div>
+      <div class="tabs" style="margin-left:${6 * U}px">${kc('Q')}${CAMP_TABS.map((t) => `<div class="tab ${t === active ? 'on' : ''}">${T(t, S.md)}</div>`).join('')}${kc('E')}</div>
+    </div>
+    ${resourceStrip('245', '3')}
+  </div>`;
+}
+function ready() { document.body.dataset.ready = '1'; }

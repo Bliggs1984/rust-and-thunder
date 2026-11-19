@@ -1,0 +1,150 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Campaign - garage</title>
+<style>/*COMMON_CSS*/
+.bgimg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.slot { display: flex; align-items: center; gap: calc(var(--u) * 3); padding: calc(var(--u) * 2); background: var(--p1);
+  box-shadow: 0 0 0 var(--u) var(--line), inset var(--u) var(--u) 0 var(--p2); width: calc(var(--u) * 112); }
+.slot.sel { background: #24200f; box-shadow: 0 0 0 var(--u) var(--line), inset 0 0 0 var(--u) var(--gold); }
+.slot .box { width: calc(var(--u) * 20); height: calc(var(--u) * 20); display: flex; align-items: center; justify-content: center; flex: none; }
+.slot.empty .box { background: transparent; box-shadow: none;
+  background-image: repeating-linear-gradient(90deg, var(--p3) 0 var(--u), transparent var(--u) calc(var(--u) * 2)), repeating-linear-gradient(90deg, var(--p3) 0 var(--u), transparent var(--u) calc(var(--u) * 2)), repeating-linear-gradient(0deg, var(--p3) 0 var(--u), transparent var(--u) calc(var(--u) * 2)), repeating-linear-gradient(0deg, var(--p3) 0 var(--u), transparent var(--u) calc(var(--u) * 2));
+  background-size: 100% var(--u), 100% var(--u), var(--u) 100%, var(--u) 100%; background-position: top, bottom, left, right; background-repeat: no-repeat; }
+.blue { background-color: #121a24; box-shadow: 0 0 0 var(--u) var(--line), inset var(--u) var(--u) 0 #0a0f16;
+  background-image: repeating-linear-gradient(0deg, #1a2838 0 var(--u), transparent var(--u) calc(var(--u) * 8)), repeating-linear-gradient(90deg, #1a2838 0 var(--u), transparent var(--u) calc(var(--u) * 8)); }
+.lead { position: absolute; background: var(--p3); }
+.lead.sel { background: var(--gold); }
+.dot { position: absolute; width: calc(var(--u) * 3); height: calc(var(--u) * 3); background: var(--p3); box-shadow: 0 0 0 var(--u) var(--line); }
+.dot.sel { background: var(--gold); }
+.tile { position: relative; width: calc(var(--u) * 26); height: calc(var(--u) * 26); display: flex; align-items: center; justify-content: center; }
+.tile.cap { box-shadow: 0 0 0 var(--u) var(--line), inset 0 0 0 var(--u) #7a5a10, inset var(--u) var(--u) 0 calc(var(--u) * 1) #07080a; }
+.tile.sel { box-shadow: 0 0 0 var(--u) var(--line), inset 0 0 0 var(--u) var(--gold), inset 0 0 0 calc(var(--u) * 2) #2a2410; background: #1e1a0c; }
+.tile .n { position: absolute; right: calc(var(--u) * 2); bottom: calc(var(--u) * 2); }
+.tile .fit { position: absolute; left: calc(var(--u) * 2); top: calc(var(--u) * 2); }
+.cur { position: absolute; width: calc(var(--u) * 4); height: calc(var(--u) * 4); border: var(--u) solid var(--gold-hi); }
+.btnp { display: inline-flex; align-items: center; gap: calc(var(--u) * 3); padding: calc(var(--u) * 3) calc(var(--u) * 5); background: var(--p2); box-shadow: 0 0 0 var(--u) var(--line), inset var(--u) var(--u) 0 var(--p3), inset calc(var(--u) * -1) calc(var(--u) * -2) 0 #15171a; }
+.btnp.go { background: #3a2c08; box-shadow: 0 0 0 var(--u) var(--line), inset 0 0 0 var(--u) var(--gold), inset calc(var(--u) * -1) calc(var(--u) * -2) 0 #1a1000; }
+</style></head>
+<body><div id="app"></div>
+<script>/*COMMON_JS*/
+const u = U;
+const PARTS = { armour: 1, engine: 1, tracks: 1 };
+const DOLL = 4 * u; // tank art scale
+const SLOTS = {
+  left: [
+    { id: 'armour', label: 'ARMOUR', part: 'SCRAP PLATES', stat: '+3 ARMOUR', at: [16, 9] },
+    { id: 'tracks', label: 'TRACKS', part: 'WIDE TRACKS', stat: '+1 SPEED', at: [5, 18] },
+    { id: 'engine', label: 'ENGINE', part: 'TRACTOR DIESEL', stat: '+1 SPEED', at: [16, 26] },
+  ],
+  right: [
+    { id: 'barrel', label: 'BARREL', part: 'OLD 100 MM', stat: 'STOCK', at: [16, 5], sel: true },
+    { id: 'jammer', label: 'DRONE JAMMER', part: null, at: [21, 21] },
+    { id: 'plough', label: 'MINE PLOUGH', part: null, at: [27, 3] },
+  ],
+};
+const slot = (s) => `<div class="slot ${s.sel ? 'sel' : ''} ${s.part ? '' : 'empty'}" data-slot="${s.id}">
+  <div class="box ${s.part ? 'well' : ''}">${icon(s.id, u, '', s.part ? null : { l: 'd', w: 'm', m: 'y', d: 'y', g: 'd', h: 'd', o: 'y', b: 'd', B: 'y', r: 'd', G: 'd' })}</div>
+  <div class="col" style="gap:${2 * u}px">${T(s.label, S.sm, s.sel ? 'c-gold' : 'c-dim')}${s.part ? T(s.part, S.md, 'c-ink') : T('EMPTY', S.md, 'c-mute')}
+    ${s.part ? T(s.stat, S.sm, s.stat === 'STOCK' ? 'c-mute' : 'c-green') : T('FIND OR CRAFT ONE', S.sm, 'c-mute')}</div>
+</div>`;
+const STATS = [
+  ['ARMOUR', 10, 0, 0], ['SPEED', 6, 0, 0], ['FIREPOWER', 5, 2, 0], ['RELOAD', 6, 0, 1],
+];
+const statRow = ([n, v, gain, loss]) => {
+  const mark = {};
+  for (let k = v; k < v + gain; k++) mark[k] = 'gain';
+  for (let k = v - loss; k < v; k++) mark[k] = 'loss';
+  return `<div class="row" style="justify-content:space-between">${T(n, S.sm, 'c-dim')}<span class="row" style="gap:${3 * u}px">${segs(10, v - loss, 5, 4, '', mark)}
+    <span style="width:${8 * 6 * 2}px">${gain ? T(`+${gain}`, S.sm, 'c-green') : loss ? T(`-${loss}`, S.sm, 'c-red') : ''}</span></span></div>`;
+};
+
+const INV = [
+  { i: 'barrel', n: 1, cap: true, sel: true }, { i: 'armour', n: 2 }, { i: 'jammer', n: 1, cap: true }, { i: 'tracks', n: 1 }, { i: 'engine', n: 1 }, { i: 'armour', n: 1, cap: true },
+  { i: 'plough', n: 1 }, { i: 'barrel', n: 1 }, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+];
+const tile = (t) => `<div class="tile well ${t.cap ? 'cap' : ''} ${t.sel ? 'sel' : ''}">${t.i ? icon(t.i, u) : ''}${t.n > 1 ? `<span class="n ol">${T('x' + t.n, S.sm, 'c-ink')}</span>` : ''}${t.sel ? '<i class="cur" style="left:-' + 2 * u + 'px;top:-' + 2 * u + 'px;border-right:0;border-bottom:0"></i><i class="cur" style="right:-' + 2 * u + 'px;bottom:-' + 2 * u + 'px;border-left:0;border-top:0"></i>' : ''}</div>`;
+
+const craft = (ic, name, have, cost, key) => `<div class="col" style="align-items:center;gap:${2 * u}px">
+  <div class="tile well" style="width:${22 * u}px;height:${22 * u}px">${icon(ic, u)}<span class="n ol">${T('x' + have, S.sm, 'c-ink')}</span></div>
+  ${T(name, S.sm, 'c-dim')}
+  <span class="btnp" style="padding:${u}px ${3 * u}px">${kc(key)}${T(cost + ' SCRAP', S.sm, 'c-ink')}</span></div>`;
+
+document.getElementById('app').innerHTML = `
+<img class="bgimg" src="IMG(bg-dusk.png)"><div class="veil" style="background:rgba(8,9,11,.88)"></div><div class="scan"></div>
+${campHeader('GARAGE', 'VYSHNEVE WORKSHOP')}
+<div style="position:absolute;left:${8 * u}px;right:${8 * u}px;top:${44 * u}px;bottom:${84 * u}px;display:grid;grid-template-columns:1.45fr 1fr;gap:${8 * u}px">
+  <div class="plate riv" id="doll">
+    <div class="hdr"><span class="row">${'<span class="tag">' + T('IP', S.sm) + '</span>'}${T('BABUSYA', S.md, 'c-ink')}<span class="row" style="gap:${u}px">${icon('chev', u)}${icon('chev', u)}${icon('chev', u, '', { g: 'd', h: 'm', o: 'y' })}</span></span>${T('CAPTURED · NOW ON OUR SIDE', S.sm, 'c-dim')}</div>
+    <div style="position:relative;display:flex;justify-content:space-between;align-items:center;gap:${6 * u}px">
+      <div class="col" style="gap:${12 * u}px">${SLOTS.left.map(slot).join('')}</div>
+      <div class="blue" id="bp" style="padding:${4 * u}px">${img(tankArt(PARTS), DOLL, '', '')}</div>
+      <div class="col" style="gap:${12 * u}px">${SLOTS.right.map(slot).join('')}</div>
+      <div id="leads"></div>
+    </div>
+    <div class="sep" style="margin:${5 * u}px 0 ${4 * u}px"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:${3 * u}px ${12 * u}px;align-items:start">
+      <div class="col" style="gap:${4 * u}px">${STATS.map(statRow).join('')}</div>
+      <div class="col" style="gap:${3 * u}px">${T('FITTING THE CAPTURED 125 BARREL', S.sm, 'c-gold')}
+        ${P('HITS HARDER AND PUNCHES THROUGH STEEL, BUT RELOADS A LITTLE SLOWER.', S.sm, 'c-dim')}
+        <div class="row" style="gap:${3 * u}px">${segs(1, 1, 4, 4, '', { 0: 'gain' })}${T('GAIN', S.sm, 'c-dim')}${segs(1, 1, 4, 4, '', { 0: 'loss' })}${T('LOSS', S.sm, 'c-dim')}</div></div>
+    </div>
+  </div>
+  <div class="plate riv" style="display:flex;flex-direction:column">
+    <div class="hdr">${T('PARTS BIN', S.sm, 'c-gold')}${T('8 / 18', S.sm, 'c-dim')}</div>
+    <div style="display:grid;grid-template-columns:repeat(6, ${26 * u}px);gap:${4 * u}px;justify-content:center">${INV.map(tile).join('')}</div>
+    <div class="sep" style="margin:${5 * u}px 0 ${4 * u}px"></div>
+    <div class="col" style="gap:${4 * u}px;flex:1">
+      <div class="row" style="justify-content:space-between">${T('CAPTURED 125 BARREL', S.lg, 'c-gold')}<span class="row" style="gap:${2 * u}px"><span class="tag steel">${T('BARREL', S.sm)}</span><span class="tag">${T('CAPTURED', S.sm)}</span></span></div>
+      <div class="row" style="gap:${10 * u}px">${T('+2 FIREPOWER', S.md, 'c-green')}${T('-1 RELOAD', S.md, 'c-red')}</div>
+      ${T('SHELLS GO THROUGH STEEL WALLS', S.sm, 'c-ink')}
+      ${P('STILL HAS THEIR SERIAL NUMBER ON IT. SPANNER FILED IT OFF. MOSTLY.', S.sm, 'c-dim')}
+      <div class="row" style="gap:${3 * u}px">${T('REPLACES', S.sm, 'c-mute')}${icon('barrel', u)}${T('OLD 100 MM', S.sm, 'c-dim')}</div>
+      <div class="sp"></div>
+      <div class="row" style="gap:${6 * u}px"><span class="btnp go">${kc('ENTER', 'gold')}${T('FIT', S.md, 'c-gold')}</span><span class="btnp">${kc('X')}${T('STRIP FOR', S.md, 'c-ink')}${icon('scrap', u)}${T('30', S.md, 'c-ink')}</span></div>
+    </div>
+  </div>
+</div>
+<div style="position:absolute;left:${8 * u}px;right:${8 * u}px;bottom:${20 * u}px;height:${56 * u}px;display:grid;grid-template-columns:0.8fr 1.3fr 1.25fr;gap:${8 * u}px">
+  <div class="plate riv">
+    <div class="hdr">${T('REPAIR', S.sm, 'c-gold')}${T('ARMOUR 7/10', S.sm, 'c-dim')}</div>
+    <div class="col" style="gap:${5 * u}px">
+      ${segs(10, 7, 6, 6, '', { 7: 'gain', 8: 'gain', 9: 'gain' })}
+      <span class="btnp">${kc('R')}${T('PATCH 3', S.md, 'c-ink')}${icon('scrap', u)}${T('45', S.md, 'c-ink')}</span>
+    </div>
+  </div>
+  <div class="plate riv">
+    <div class="hdr">${T('CRAFT CHARGES', S.sm, 'c-gold')}${T('SHARED BY BOTH TANKS', S.sm, 'c-dim')}</div>
+    <div class="row" style="justify-content:space-around;align-items:flex-start">${craft('fpv', 'FPV DRONE', 2, '32', '1')}${craft('ambush', 'AMBUSH', 1, '30', '2')}${craft('recon', 'RECON', 1, '20', '3')}</div>
+  </div>
+  <div class="plate riv">
+    <div class="hdr">${T('MECHANIC', S.sm, 'c-gold')}${T('LV 5', S.sm, 'c-dim')}</div>
+    <div class="row" style="align-items:flex-start;gap:${4 * u}px">
+      <div class="well">${portrait('yurko', u)}</div>
+      <div class="col" style="gap:${3 * u}px;flex:1">${T('SPANNER', S.md, 'c-gold')}
+        ${P('"THE NEW BARREL IS LONGER THAN THE OLD ONE. SO IS MY LIST OF COMPLAINTS."', S.sm, 'c-ink')}
+        ${T('PERK: WRECKS DROP 25% MORE SCRAP', S.sm, 'c-green')}</div>
+    </div>
+  </div>
+</div>
+<div class="hints" style="position:absolute;left:50%;bottom:${6 * u}px;transform:translateX(-50%);white-space:nowrap">${hints([[['↑', '↓', '←', '→'], 'SELECT'], [['ENTER'], 'FIT'], [['X'], 'STRIP'], [['R'], 'REPAIR'], [['Q', 'E'], 'TABS'], [['ESC'], 'BACK TO THE ROAD']])}</div>`;
+
+// leader lines from each slot to where the part sits on the tank (elbow: horizontal then vertical)
+requestAnimationFrame(() => {
+  const host = document.getElementById('leads').parentElement.getBoundingClientRect();
+  const bp = document.querySelector('#bp img').getBoundingClientRect();
+  const sc = DOLL;
+  let h = '';
+  for (const side of ['left', 'right']) for (const s of SLOTS[side]) {
+    const r = document.querySelector(`[data-slot="${s.id}"]`).getBoundingClientRect();
+    const tx = Math.round(bp.left + (s.at[0] + 0.5) * sc - host.left), ty = Math.round(bp.top + (s.at[1] + 0.5) * sc - host.top);
+    const sx = side === 'left' ? r.right - host.left + u : r.left - host.left - u, sy = Math.round(r.top + r.height / 2 - host.top);
+    const mx = side === 'left' ? Math.round(bp.left - host.left - 6 * u - (2 - SLOTS[side].indexOf(s)) * 3 * u) : Math.round(bp.right - host.left + 6 * u + SLOTS[side].indexOf(s) * 3 * u);
+    const cls = s.sel ? 'sel' : '';
+    const hl = (x0, x1, y) => `<i class="lead ${cls}" style="left:${Math.min(x0, x1)}px;top:${y}px;width:${Math.abs(x1 - x0) + u}px;height:${u}px"></i>`;
+    const vl = (x, y0, y1) => `<i class="lead ${cls}" style="left:${x}px;top:${Math.min(y0, y1)}px;width:${u}px;height:${Math.abs(y1 - y0) + u}px"></i>`;
+    h += hl(sx, mx, sy) + vl(mx, sy, ty) + hl(mx, tx, ty);
+    h += `<i class="dot ${cls}" style="left:${tx - u}px;top:${ty - u}px"></i>`;
+  }
+  document.getElementById('leads').innerHTML = h;
+  ready();
+});
+</script></body></html>

@@ -1,0 +1,44 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Campaign - crew</title>
+<style>/*COMMON_CSS*/
+.bgimg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.card { display: flex; flex-direction: column; gap: calc(var(--u) * 4); }
+.card.sel { box-shadow: 0 0 0 var(--u) var(--line), inset 0 0 0 var(--u) var(--gold), inset calc(var(--u) * 2) calc(var(--u) * 2) 0 var(--p3), inset calc(var(--u) * -2) calc(var(--u) * -2) 0 var(--p0), calc(var(--u) * 2) calc(var(--u) * 2) 0 var(--u) rgba(0, 0, 0, 0.5); }
+.pframe { align-self: center; padding: calc(var(--u) * 2); }
+.box2 { padding: calc(var(--u) * 3); background: var(--well); box-shadow: 0 0 0 var(--u) var(--line), inset var(--u) var(--u) 0 #07080a; display: flex; flex-direction: column; gap: calc(var(--u) * 2); }
+</style></head>
+<body><div id="app"></div>
+<script>/*COMMON_JS*/
+const u = U;
+const ABIL = { fpv: 'FPV DRONE STRIKE', ambush: 'INFANTRY AMBUSH', recon: 'RECON DRONE', repair: 'FIELD PATCH' };
+const ORDER = ['mykola', 'halyna', 'yurko', 'sofia', 'taras'];
+const SEL = 'sofia';
+function card(id) {
+  const c = CREW[id];
+  const sel = id === SEL;
+  const lvUp = id === 'sofia';
+  return `<div class="plate riv card ${sel ? 'sel' : ''}">
+    <div class="hdr ${sel ? 'gold' : ''}">${T(c.role, S.sm, sel ? 'c-gold' : 'c-dim')}${T('LV ' + c.lv, S.sm, 'c-ink')}</div>
+    <div class="well pframe">${portrait(id, 3 * u)}</div>
+    <div class="col" style="align-items:center;gap:${2 * u}px">${T(c.name, S.lg, 'c-ink')}${T(`"${c.call}"`, S.md, 'c-gold')}</div>
+    <div class="row" style="justify-content:center;gap:${3 * u}px">${segs(10, Math.round(c.xp[0] / c.xp[1] * 10), 4, 3, 'blue')}${T(`${c.xp[0]}/${c.xp[1]}`, S.sm, 'c-dim')}</div>
+    <div class="box2" style="min-height:${44 * u}px">${T('PERK', S.sm, 'c-mute')}${T(c.perk[0], S.md, 'c-green')}${P(c.perk[1], S.sm, 'c-dim')}
+      ${lvUp ? `<div class="row" style="gap:${2 * u}px;margin-top:${u}px">${T('LV 3:', S.sm, 'c-gold')}${T('35% LESS SCRAP', S.sm, 'c-gold')}</div>` : ''}</div>
+    <div class="box2">${T('UNLOCKS', S.sm, 'c-mute')}${c.ability
+      ? `<div class="row" style="gap:${3 * u}px">${icon(c.ability, u)}${P(ABIL[c.ability], S.sm, 'c-ink')}</div>`
+      : `<div class="row" style="gap:${3 * u}px;height:${16 * u}px">${P('NO ABILITY. HE IS THE ONE DRIVING.', S.sm, 'c-mute')}</div>`}</div>
+    ${P(`"${c.quip}"`, S.sm, 'c-dim')}
+    <div class="sp"></div>
+    <div class="row" style="justify-content:space-between">${c.recruit ? `<span class="tag blue">${T('NEW · VYSHNEVE', S.sm)}</span>` : `<span class="tag">${T('BABUSYA', S.sm)}</span>`}
+      ${lvUp ? `<span class="row" style="gap:${2 * u}px">${kc('ENTER', 'gold')}${T('LEVEL UP', S.sm, 'c-gold blink')}</span>` : ''}</div>
+  </div>`;
+}
+document.getElementById('app').innerHTML = `
+<img class="bgimg" src="IMG(bg-dusk.png)"><div class="veil" style="background:rgba(8,9,11,.88)"></div><div class="scan"></div>
+${campHeader('CREW', 'VYSHNEVE WORKSHOP')}
+<div style="position:absolute;left:${8 * u}px;right:${8 * u}px;top:${44 * u}px;bottom:${22 * u}px;display:grid;grid-template-columns:repeat(5, 1fr);gap:${8 * u}px">
+  ${ORDER.map(card).join('')}
+</div>
+<div class="hints" style="position:absolute;left:50%;bottom:${7 * u}px;transform:translateX(-50%);white-space:nowrap">${hints([[['←', '→'], 'SELECT'], [['ENTER'], 'LEVEL UP'], [['T'], 'TALK'], [['Q', 'E'], 'TABS'], [['ESC'], 'BACK TO THE ROAD']])}</div>`;
+ready();
+</script></body></html>

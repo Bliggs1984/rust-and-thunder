@@ -1,0 +1,185 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Campaign - region map</title>
+<style>/*COMMON_CSS*/
+.bgimg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.abs { position: absolute; }
+.mk { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: var(--u); }
+.mk .lbl { padding: var(--u) calc(var(--u) * 2); background: rgba(11, 12, 14, 0.85); }
+.mk.sel .lbl { background: var(--gold); color: #1a1000; }
+.reg { display: flex; align-items: center; gap: calc(var(--u) * 3); padding: calc(var(--u) * 2) calc(var(--u) * 4); }
+.reg.on { box-shadow: 0 0 0 var(--u) var(--line), inset 0 0 0 var(--u) var(--gold), inset calc(var(--u) * 2) calc(var(--u) * 2) 0 var(--p3); }
+.reg.off { opacity: 0.55; }
+.box2 { padding: calc(var(--u) * 3); background: var(--well); box-shadow: 0 0 0 var(--u) var(--line), inset var(--u) var(--u) 0 #07080a; display: flex; flex-direction: column; gap: calc(var(--u) * 3); }
+.btnp { display: inline-flex; align-items: center; gap: calc(var(--u) * 3); padding: calc(var(--u) * 3) calc(var(--u) * 5); background: var(--p2); box-shadow: 0 0 0 var(--u) var(--line), inset var(--u) var(--u) 0 var(--p3), inset calc(var(--u) * -1) calc(var(--u) * -2) 0 #15171a; }
+.btnp.go { background: #3a2c08; box-shadow: 0 0 0 var(--u) var(--line), inset 0 0 0 var(--u) var(--gold), inset calc(var(--u) * -1) calc(var(--u) * -2) 0 #1a1000; }
+.dash { flex: 1; height: var(--u); background: repeating-linear-gradient(90deg, var(--p3) 0 calc(var(--u) * 2), transparent calc(var(--u) * 2) calc(var(--u) * 4)); }
+</style></head>
+<body><div id="app"></div>
+<script>/*COMMON_JS*/
+const u = U;
+const TOWNS = [
+  { name: 'TYKHE POLE', c: [40, 36], st: 'enemy', sel: true },
+  { name: 'ZOLOTA BALKA', c: [128, 50], st: 'enemy' },
+  { name: 'STARI SADY', c: [164, 110], st: 'fog' },
+  { name: 'VYSHNEVE', c: [44, 145], st: 'free', shop: true },
+  { name: 'KALYNIVKA', c: [112, 168], st: 'free' },
+];
+const DEPOTS = [{ c: [30, 112], done: true }, { c: [78, 113] }, { c: [183, 187] }];
+const ROUTE = [[48, 140], [66, 124], [66, 84], [52, 58], [44, 46]];
+const MINES = [[44, 92], [40, 76]];
+const EVENT = [100, 100];
+
+function mix(a, b, t) {
+  const p = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const A = p(a), B = p(b);
+  return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join('');
+}
+function regionArt() {
+  return new Promise((res) => {
+    const im = new Image();
+    im.onload = () => {
+      const src = document.createElement('canvas'); src.width = 832; src.height = 832;
+      const sg = src.getContext('2d'); sg.drawImage(im, 0, 0);
+      const D = sg.getImageData(0, 0, 832, 832).data;
+      const n = 208, a = new Art(n, n);
+      const TER = { ground: '#4a5a30', tree: '#2a3e1e', water: '#2e5488', brick: '#a0704a', steel: '#8a919b', ice: '#a8c4d0' };
+      const classify = (r, g, b) => (b > 150 && r > 150 ? 'ice' : b > 140 ? 'water' : r > 170 && g < 120 ? 'brick' : r > 130 && g > 130 && b > 140 ? 'steel' : g < 100 && r < 60 ? 'tree' : 'ground');
+      const sector = (x, y) => { let best = 0, bd = 1e9; TOWNS.forEach((t, i) => { const d = (t.c[0] - x) ** 2 + (t.c[1] - y) ** 2; if (d < bd) { bd = d; best = i; } }); return best; };
+      const sec = [];
+      for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+        const i = ((y * 4 + 2) * 832 + x * 4 + 2) * 4;
+        let t = classify(D[i], D[i + 1], D[i + 2]);
+        if (D[i] > 200 && D[i + 1] < 60) t = 'ground'; // enemy spawn boxes in the preview
+        if (D[i] > 240 && D[i + 1] > 240 && D[i + 2] < 100) t = 'ground';
+        const s = sector(x, y); sec[y * n + x] = s;
+        let col = TER[t];
+        // field texture: alternate rows of crops on open ground
+        if (t === 'ground' && (y % 4 === 0)) col = mix(col, '#000000', 0.12);
+        const st = TOWNS[s].st;
+        if (st === 'fog') col = mix(col, '#0c0d10', 0.72);
+        else if (st === 'enemy') col = mix(col, '#f0482a', 0.16);
+        else col = mix(col, '#f8b800', 0.14);
+        a.set(x, y, col);
+      }
+      for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+        const me = sec[y * n + x];
+        const edge = (x + 1 < n && sec[y * n + x + 1] !== me) || (y + 1 < n && sec[(y + 1) * n + x] !== me);
+        if (edge && (x + y) % 3 !== 0) a.set(x, y, '#d8d0b8');
+      }
+      // planned route (dotted gold, detours round the mines)
+      for (let k = 0; k < ROUTE.length - 1; k++) {
+        const [x0, y0] = ROUTE[k], [x1, y1] = ROUTE[k + 1];
+        const L = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+        for (let i = 0; i <= L; i++) {
+          if (i % 4 === 3) continue;
+          const x = Math.round(x0 + (x1 - x0) * i / L), y = Math.round(y0 + (y1 - y0) * i / L);
+          a.set(x, y, '#ffe08a'); a.set(x + 1, y, '#f8b800'); a.set(x, y + 1, '#c87000'); a.set(x + 1, y + 1, '#c87000');
+        }
+      }
+      res(a);
+    };
+    im.src = 'IMG(region.png)';
+  });
+}
+
+const regions = [
+  ['I', 'FARMLAND', 'on', '2/5 TOWNS'], ['II', 'RAIL JUNCTION', 'off'], ['III', 'RIVER DELTA', 'off'], ['IV', 'RUINED TOWN', 'off'], ['V', 'WINTER FRONT', 'off'],
+];
+const regionStrip = () => `<div class="row" style="gap:${3 * u}px">${regions.map(([n, name, st, sub], i) => `
+  ${i ? '<div class="dash"></div>' : ''}
+  <div class="plate flat reg ${st}">${T(n, S.xl, st === 'on' ? 'gold' : 'steel')}<div class="col" style="gap:${2 * u}px">${T(name, S.sm, st === 'on' ? 'c-ink' : 'c-dim')}${st === 'on' ? T(sub, S.sm, 'c-gold') : `<span class="row" style="gap:${2 * u}px">${img(iconArt('lock'), 1, '', `width:${12 * 2}px;height:${11 * 2}px`)}${T('LOCKED', S.sm, 'c-mute')}</span>`}</div></div>`).join('')}</div>`;
+
+regionArt().then((art) => {
+  const M = 208 * u; // map size in screen px: one cell = one UI pixel
+  const pos = (c) => `left:${c[0] * u}px;top:${c[1] * u}px`;
+  let marks = '';
+  TOWNS.forEach((t) => {
+    if (t.st === 'fog') { marks += `<div class="mk" style="${pos(t.c)}">${T('?', S.xl, 'c-dim')}<span class="lbl">${T('NOT SCOUTED', S.sm, 'c-mute')}</span></div>`; return; }
+    const remap = t.st === 'free' ? null : { g: 'r', h: '#ffb09a', o: 'q' };
+    marks += `<div class="mk ${t.sel ? 'sel' : ''}" style="${pos(t.c)}"><div style="position:relative">${icon('town', u, '', remap)}${t.shop ? `<div class="abs" style="left:${-16 * u}px;top:0">${icon('repair', u)}</div>` : ''}</div><span class="lbl">${T(t.name, S.sm, t.sel ? '' : t.st === 'free' ? 'c-gold' : 'c-red')}</span></div>`;
+  });
+  DEPOTS.forEach((d) => { marks += `<div class="mk" style="${pos(d.c)}">${icon('depot', u, '', d.done ? { l: 'd', m: 'y', w: 'd' } : { l: 'r', w: '#ffb09a', m: 'q' }, d.done ? 'opacity:.7' : '')}</div>`; });
+  MINES.forEach((m) => { marks += `<div class="mk" style="${pos(m)}">${icon('mine', u)}</div>`; });
+  marks += `<div class="mk" style="${pos(EVENT)}">${icon('event', u)}</div>`;
+  marks += `<div class="mk" style="${pos([64, 128])}">${icon('tank16', u)}</div>`;
+  // selection brackets on the target town
+  const sel = TOWNS[0].c;
+  marks += `<div class="abs cursor" style="left:${sel[0] * u - 14 * u}px;top:${sel[1] * u - 14 * u}px;width:${28 * u}px;height:${24 * u}px;
+    background:linear-gradient(var(--gold-hi),var(--gold-hi)) left top/${5 * u}px ${u}px no-repeat,linear-gradient(var(--gold-hi),var(--gold-hi)) left top/${u}px ${5 * u}px no-repeat,
+    linear-gradient(var(--gold-hi),var(--gold-hi)) right top/${5 * u}px ${u}px no-repeat,linear-gradient(var(--gold-hi),var(--gold-hi)) right top/${u}px ${5 * u}px no-repeat"></div>`;
+
+  const legend = [['town', 'FREED', null], ['town', 'HELD', { g: 'r', h: '#ffb09a', o: 'q' }], ['depot', 'DEPOT', { l: 'r', w: '#ffb09a', m: 'q' }], ['repair', 'WORKSHOP', null], ['mine', 'MINES', null], ['event', 'EVENT', null]];
+  const tanks = (n) => Array.from({ length: n }, () => icon('tank16', u, '', { body: 'red' })).join('');
+
+  document.getElementById('app').innerHTML = `
+<img class="bgimg" src="IMG(bg-dusk.png)"><div class="veil" style="background:rgba(8,9,11,.9)"></div><div class="scan"></div>
+${campHeader('MAP', 'VYSHNEVE WORKSHOP')}
+<div class="abs" style="left:${8 * u}px;right:${8 * u}px;top:${40 * u}px">${regionStrip()}</div>
+<div class="abs plate riv" style="left:${8 * u}px;top:${66 * u}px;padding:${3 * u}px">
+  <div class="hdr" style="margin:${-3 * u}px ${-3 * u}px ${3 * u}px;padding:${2 * u}px ${3 * u}px">${T('REGION I · FARMLAND', S.sm, 'c-gold')}${T('DAY · CLEAR', S.sm, 'c-dim')}</div>
+  <div class="well" style="position:relative;width:${M}px;height:${M}px">${img(art, u)}${marks}</div>
+  <div class="row" style="justify-content:space-between;margin-top:${3 * u}px">${legend.map(([i, l, r]) => `<span class="row" style="gap:${u}px">${img(iconArt(i, r), 2)}${T(l, S.sm, 'c-dim')}</span>`).join('')}</div>
+</div>
+<div class="abs plate riv" style="left:${232 * u}px;top:${66 * u}px;width:${212 * u}px;bottom:${22 * u}px;display:flex;flex-direction:column;gap:${5 * u}px">
+  <div class="hdr">${'<span class="tag red">' + T('HELD TOWN', S.sm) + '</span>'}${T('2.4 KM NORTH', S.sm, 'c-dim')}</div>
+  <div class="row" style="gap:${5 * u}px">${icon('town', 2 * u, '', { g: 'r', h: '#ffb09a', o: 'q' })}<div class="col" style="gap:${3 * u}px">${T('TYKHE POLE', S.xl, 'gold')}${T('POP. 1,900 · SHELTERING IN CELLARS', S.sm, 'c-dim')}</div></div>
+  <div class="box2">
+    ${T('GARRISON', S.sm, 'c-mute')}
+    <div class="row" style="gap:${2 * u}px">${tanks(6)}<span style="margin-left:${3 * u}px">${T('6 TANKS', S.md, 'c-ink')}</span></div>
+    <div class="row" style="gap:${8 * u}px">${T('+ DRONE TEAM', S.sm, 'c-red')}${T('+ MINES ON THE MAIN ROAD', S.sm, 'c-red')}</div>
+    <div class="row" style="gap:${3 * u}px">${T('THREAT', S.sm, 'c-mute')}${segs(5, 3, 6, 3, '', { 0: 'warn', 1: 'warn', 2: 'warn' })}${T('TOUGH', S.sm, 'c-red')}</div>
+  </div>
+  <div class="box2">
+    ${T('FREE IT FOR', S.sm, 'c-mute')}
+    <div class="row" style="gap:${8 * u}px;flex-wrap:wrap">
+      <span class="row" style="gap:${2 * u}px">${icon('repair', u)}${T('WORKSHOP', S.md, 'c-ink')}</span>
+      <span class="row" style="gap:${2 * u}px">${icon('parts', u)}${T('+2 PARTS', S.md, 'c-ink')}</span>
+      <span class="row" style="gap:${2 * u}px">${icon('scrap', u)}${T('~80', S.md, 'c-ink')}</span>
+    </div>
+  </div>
+  <div class="row" style="align-items:flex-start;gap:${4 * u}px">
+    <div class="well">${portrait('taras', u)}</div>
+    <div class="col" style="gap:${3 * u}px;flex:1">${T('OWL', S.md, 'c-gold')}${P('"THEIR MINES ARE ON THE MAIN ROAD. SO WE WON\'T BE. I MARKED THE FARM TRACK."', S.sm, 'c-ink')}</div>
+  </div>
+  <div class="box2">
+    ${T('ROUTE', S.sm, 'c-mute')}
+    <div class="row" style="gap:${3 * u}px">${icon('mine', u)}${P('FARM TRACK. AVOIDS BOTH MINEFIELDS, ADDS ABOUT A MINUTE.', S.sm, 'c-ink')}</div>
+  </div>
+  <div class="sp"></div>
+  <div class="row" style="gap:${6 * u}px"><span class="btnp go">${kc('ENTER', 'gold')}${T('SET OUT', S.md, 'c-gold')}</span><span class="btnp">${kc('TAB')}${T('NEXT TARGET', S.md, 'c-ink')}</span></div>
+</div>
+<div class="abs col" style="left:${452 * u}px;right:${8 * u}px;top:${66 * u}px;bottom:${22 * u}px;gap:${8 * u}px">
+  <div class="plate riv">
+    <div class="hdr">${T('LIBERATION', S.sm, 'c-gold')}${T('40%', S.sm, 'c-ink')}</div>
+    <div class="col" style="gap:${4 * u}px">
+      ${segs(10, 4, 13, 5)}
+      <div class="row" style="justify-content:space-between">${T('TOWNS', S.sm, 'c-dim')}${T('2 / 5', S.md, 'c-ink')}</div>
+      <div class="row" style="justify-content:space-between">${T('DEPOTS', S.sm, 'c-dim')}${T('1 / 3', S.md, 'c-ink')}</div>
+      <div class="row" style="justify-content:space-between">${T('EVENTS', S.sm, 'c-dim')}${T('1 FOUND', S.md, 'c-blue')}</div>
+    </div>
+  </div>
+  <div class="plate riv">
+    <div class="hdr">${T('REGION BOSS', S.sm, 'c-red')}${img(iconArt('lock'), u)}</div>
+    <div class="row" style="gap:${4 * u}px;align-items:center">
+      <div class="well" style="width:${32 * u}px;height:${32 * u}px;display:flex;align-items:center;justify-content:center">${T('?', S.xxl, 'c-mute')}</div>
+      <div class="col" style="gap:${3 * u}px;flex:1">${T('UNKNOWN', S.md, 'c-dim')}${P('FREE 1 MORE TOWN AND SOMEONE WILL TALK.', S.sm, 'c-mute')}</div>
+    </div>
+  </div>
+  <div class="plate riv">
+    <div class="hdr">${T('READY CHECK', S.sm, 'c-gold')}<span class="tag">${T('IP', S.sm)}</span></div>
+    <div class="row" style="gap:${4 * u}px">${img(tankArt({ armour: 1, engine: 1, tracks: 1 }), u)}
+      <div class="col" style="gap:${3 * u}px">
+        <div class="row" style="gap:${3 * u}px">${T('ARMOUR', S.sm, 'c-dim')}${segs(10, 7, 4, 4)}</div>
+        <div class="row" style="gap:${5 * u}px">${['fpv', 'ambush', 'recon'].map((i, k) => `<span class="row" style="gap:${u}px">${icon(i, u)}${T('x' + [2, 1, 1][k], S.sm, 'c-ink')}</span>`).join('')}</div>
+        ${T('PATCH UP BEFORE YOU GO? 45 SCRAP', S.sm, 'c-gold')}
+      </div></div>
+  </div>
+  <div class="plate riv">
+    <div class="hdr">${T('MAP EVENT', S.sm, 'c-blue')}${icon('event', 2)}</div>
+    ${P('A VILLAGE ASKS FOR HELP CLEARING MINES FROM ITS SUNFLOWER FIELD.', S.sm, 'c-ink')}
+  </div>
+</div>
+<div class="hints" style="position:absolute;left:50%;bottom:${7 * u}px;transform:translateX(-50%);white-space:nowrap">${hints([[['↑', '↓', '←', '→'], 'MOVE'], [['TAB'], 'NEXT TARGET'], [['ENTER'], 'SET OUT'], [['Q', 'E'], 'TABS'], [['ESC'], 'BACK']])}</div>`;
+  ready();
+});
+</script></body></html>

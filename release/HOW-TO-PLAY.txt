@@ -1,0 +1,43 @@
+RUST & THUNDER
+==============
+
+A top-down pixel-art tank game with modern lighting, an arcade mode and a big campaign.
+
+HOW TO START
+  Double-click RustAndThunder.html. It opens in your web browser (Chrome, Edge or Firefox).
+  Nothing to install, no internet needed. Press F for fullscreen.
+
+TWO WAYS TO PLAY
+  1 PLAYER / 2 PLAYERS  The classic arcade game: protect the eagle, destroy every tank on the stage.
+  CAMPAIGN              Drive your scrappy captured tank BABUSYA across five big regions.
+                        Free villages, salvage wrecks, upgrade the tank in the workshop,
+                        recruit a crew and take down each region's boss.
+                        The campaign saves itself in your browser (CONTINUE on the menu).
+
+CONTROLS (keyboard)
+  Move ............ Arrow keys or WASD
+  Fire ............ Space
+  Pause ........... Esc or P
+  Campaign:
+    1 ............. FPV drone (hold to aim, release to launch, tap for a quick strike)
+    2 ............. Infantry ambush (place in trees or ruins)
+    3 ............. Recon drone (shows hidden enemies and mines)
+    4 ............. Patch armour
+    Tab ........... Big map
+    Enter ......... Workshop, when parked at a freed village's flag
+
+  Two players on one keyboard:
+    Player 1 ...... WASD to move, Space to fire, 1-4 abilities, H for the workshop
+    Player 2 ...... Arrow keys to move, Enter to fire, Numpad 1-4 abilities
+
+  Gamepads work too (hold LB or RB + d-pad for abilities, Back for the map).
+
+OTHER KEYS
+  F fullscreen   M mute   R lighting on/off   C retro CRT look   ` show frame rate
+
+TIPS
+  - Your tank can take about 4 hits in the campaign. Press 4 to patch it (once every 15 seconds).
+  - Wrecks drop scrap and parts: drive over them.
+  - Bosses flash and glow before their big shots: keep moving.
+  - Losing all your lives is a retreat, not game over: you keep your progress and try again a little easier.
+  - If the game runs slowly on your computer it lowers its own resolution to stay smooth.

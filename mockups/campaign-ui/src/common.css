@@ -1,0 +1,130 @@
+/* Campaign UI design system. One UI pixel = --u screen px (3 at 1080p, 2 at 720p); every size below is
+   a whole number of UI pixels. Flat fills, hard bevels, no smooth gradients. */
+:root {
+  --u: 3px;
+  --line: #0b0c0e;
+  --p0: #121418;  /* plate shadow edge */
+  --p1: #1c1f24;  /* plate body */
+  --p2: #2b2f36;  /* raised / header */
+  --p3: #4a4f58;  /* plate highlight edge */
+  --well: #101215; /* sunken wells */
+  --rivet: #6a707a;
+  --ink: #f4efe2;
+  --dim: #9aa0a8;
+  --mute: #5d636c;
+  --gold: #f8b800;
+  --gold-hi: #ffe08a;
+  --orange: #c87000;
+  --rust: #983000;
+  --red: #f0482a;
+  --red-dk: #7a1a10;
+  --green: #7cd83a;
+  --green-dk: #3a8a10;
+  --blue: #6c9cff;
+  --blue-dk: #3050c0;
+  --steel: #c6ccd4;
+}
+
+html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+body {
+  background-color: #0c0d10;
+  color: var(--ink);
+  user-select: none;
+  image-rendering: pixelated;
+}
+* { box-sizing: border-box; }
+img, canvas { image-rendering: pixelated; display: block; }
+
+/* ---------- pixel text ---------- */
+.px { display: inline-flex; vertical-align: middle; line-height: 0; white-space: nowrap; flex: none; }
+.px i { display: inline-block; flex: none; background: currentColor; mask-repeat: no-repeat; -webkit-mask-repeat: no-repeat; }
+/* banded fills: stops sit on glyph rows (7 lit rows of 8) so each band is whole pixels */
+.px.gold i { background: linear-gradient(180deg, var(--gold-hi) 0 25%, var(--gold) 25% 62.5%, var(--orange) 62.5% 100%); }
+.px.steel i { background: linear-gradient(180deg, #ffffff 0 25%, var(--steel) 25% 62.5%, #7c838e 62.5% 100%); }
+.px.redb i { background: linear-gradient(180deg, #ffb09a 0 25%, var(--red) 25% 62.5%, var(--rust) 62.5% 100%); }
+.para { display: flex; flex-wrap: wrap; align-items: flex-start; }
+.c-gold { color: var(--gold); } .c-dim { color: var(--dim); } .c-mute { color: var(--mute); }
+.c-red { color: var(--red); } .c-green { color: var(--green); } .c-ink { color: var(--ink); }
+.c-blue { color: var(--blue); } .c-hi { color: var(--gold-hi); } .c-dark { color: #1a1000; }
+/* hard 1-pixel shadow / outline for text over the game view */
+.sh { filter: drop-shadow(var(--u) var(--u) 0 #000); }
+.ol { filter: drop-shadow(var(--u) 0 0 #000) drop-shadow(calc(var(--u) * -1) 0 0 #000) drop-shadow(0 var(--u) 0 #000) drop-shadow(0 calc(var(--u) * -1) 0 #000); }
+
+/* ---------- plates ---------- */
+.plate {
+  position: relative;
+  background-color: var(--p1);
+  padding: calc(var(--u) * 4);
+  box-shadow:
+    0 0 0 var(--u) var(--line),
+    inset var(--u) var(--u) 0 var(--p3),
+    inset calc(var(--u) * -1) calc(var(--u) * -1) 0 var(--p0),
+    calc(var(--u) * 2) calc(var(--u) * 2) 0 var(--u) rgba(0, 0, 0, 0.5);
+}
+.plate.riv::after {
+  content: ''; position: absolute; inset: calc(var(--u) * 2); pointer-events: none;
+  background:
+    linear-gradient(var(--rivet), var(--rivet)) left top / var(--u) var(--u) no-repeat,
+    linear-gradient(var(--rivet), var(--rivet)) right top / var(--u) var(--u) no-repeat,
+    linear-gradient(var(--rivet), var(--rivet)) left bottom / var(--u) var(--u) no-repeat,
+    linear-gradient(var(--rivet), var(--rivet)) right bottom / var(--u) var(--u) no-repeat;
+}
+.plate.flat { box-shadow: 0 0 0 var(--u) var(--line), inset var(--u) var(--u) 0 var(--p3), inset calc(var(--u) * -1) calc(var(--u) * -1) 0 var(--p0); }
+/* P1 / P2 ownership: a 1-pixel coloured rim inside the outline */
+.plate.own1 { box-shadow: 0 0 0 var(--u) var(--line), inset 0 0 0 var(--u) var(--gold), inset calc(var(--u) * 2) calc(var(--u) * 2) 0 var(--p3), inset calc(var(--u) * -2) calc(var(--u) * -2) 0 var(--p0), calc(var(--u) * 2) calc(var(--u) * 2) 0 var(--u) rgba(0, 0, 0, 0.5); }
+.plate.own2 { box-shadow: 0 0 0 var(--u) var(--line), inset 0 0 0 var(--u) var(--green), inset calc(var(--u) * 2) calc(var(--u) * 2) 0 var(--p3), inset calc(var(--u) * -2) calc(var(--u) * -2) 0 var(--p0), calc(var(--u) * 2) calc(var(--u) * 2) 0 var(--u) rgba(0, 0, 0, 0.5); }
+
+.well { background: var(--well); box-shadow: 0 0 0 var(--u) var(--line), inset var(--u) var(--u) 0 #07080a, inset calc(var(--u) * -1) calc(var(--u) * -1) 0 #262a30; }
+
+.hdr {
+  display: flex; align-items: center; justify-content: space-between; gap: calc(var(--u) * 4);
+  margin: calc(var(--u) * -4) calc(var(--u) * -4) calc(var(--u) * 4);
+  padding: calc(var(--u) * 3) calc(var(--u) * 4);
+  background-color: var(--p2);
+  background-image: var(--hazard);
+  background-size: calc(var(--u) * 8) calc(var(--u) * 8);
+  box-shadow: inset 0 calc(var(--u) * -1) 0 var(--line), inset var(--u) var(--u) 0 var(--p3);
+}
+.hdr.gold { background-color: #3a2c08; background-image: var(--hazard-gold); }
+
+.tag { display: inline-flex; padding: var(--u) calc(var(--u) * 2); background: var(--gold); color: #1a1000; box-shadow: 0 0 0 var(--u) var(--line), inset calc(var(--u) * -1) calc(var(--u) * -1) 0 var(--orange); }
+.tag.p2 { background: var(--green); box-shadow: 0 0 0 var(--u) var(--line), inset calc(var(--u) * -1) calc(var(--u) * -1) 0 var(--green-dk); }
+.tag.red { background: var(--red); color: #1a0400; box-shadow: 0 0 0 var(--u) var(--line), inset calc(var(--u) * -1) calc(var(--u) * -1) 0 var(--red-dk); }
+.tag.steel { background: var(--steel); color: #15171b; box-shadow: 0 0 0 var(--u) var(--line), inset calc(var(--u) * -1) calc(var(--u) * -1) 0 #7c838e; }
+.tag.blue { background: var(--blue); color: #08112a; box-shadow: 0 0 0 var(--u) var(--line), inset calc(var(--u) * -1) calc(var(--u) * -1) 0 var(--blue-dk); }
+
+.kc { display: inline-flex; align-items: center; justify-content: center; padding: var(--u) calc(var(--u) * 2); min-width: calc(var(--u) * 9); background: var(--p2); color: var(--ink);
+  box-shadow: 0 0 0 var(--u) var(--line), inset var(--u) var(--u) 0 var(--p3), inset calc(var(--u) * -1) calc(var(--u) * -2) 0 #15171a; padding-bottom: calc(var(--u) * 2); }
+.kc.gold { background: var(--gold); color: #1a1000; box-shadow: 0 0 0 var(--u) var(--line), inset var(--u) var(--u) 0 var(--gold-hi), inset calc(var(--u) * -1) calc(var(--u) * -2) 0 var(--orange); }
+.kc.green { background: var(--green); color: #0a1a00; box-shadow: 0 0 0 var(--u) var(--line), inset var(--u) var(--u) 0 #c4f59a, inset calc(var(--u) * -1) calc(var(--u) * -2) 0 var(--green-dk); }
+
+.hints { display: flex; gap: calc(var(--u) * 8); align-items: center; color: var(--dim); }
+.hints > span { display: flex; align-items: center; gap: calc(var(--u) * 2); }
+
+/* segmented bars */
+.segs { display: flex; gap: var(--u); }
+.segs i { display: block; background: #2a2e35; box-shadow: 0 0 0 var(--u) var(--line); }
+.segs i.on { background: var(--gold); box-shadow: 0 0 0 var(--u) var(--line), inset 0 calc(var(--u) * -1) 0 var(--orange), inset 0 var(--u) 0 var(--gold-hi); }
+.segs.green i.on { background: var(--green); box-shadow: 0 0 0 var(--u) var(--line), inset 0 calc(var(--u) * -1) 0 var(--green-dk), inset 0 var(--u) 0 #c4f59a; }
+.segs.blue i.on { background: var(--blue); box-shadow: 0 0 0 var(--u) var(--line), inset 0 calc(var(--u) * -1) 0 var(--blue-dk), inset 0 var(--u) 0 #b8d0ff; }
+.segs i.warn { background: var(--red); box-shadow: 0 0 0 var(--u) var(--line), inset 0 calc(var(--u) * -1) 0 var(--red-dk); }
+.segs i.gain { background: var(--green); box-shadow: 0 0 0 var(--u) var(--line), inset 0 calc(var(--u) * -1) 0 var(--green-dk); }
+.segs i.loss { background: #3a1410; box-shadow: 0 0 0 var(--u) var(--line), inset 0 0 0 var(--u) var(--red); }
+
+.row { display: flex; align-items: center; gap: calc(var(--u) * 3); }
+.col { display: flex; flex-direction: column; gap: calc(var(--u) * 3); }
+.sp { flex: 1 1 auto; }
+.sep { height: var(--u); background: var(--line); box-shadow: 0 var(--u) 0 var(--p3); margin: calc(var(--u) * 3) 0; }
+
+/* veil over a dimmed game view, for camp screens */
+.veil { position: absolute; inset: 0; background: rgba(6, 7, 9, 0.8); }
+.scan { position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.22) 0 var(--u), transparent var(--u) calc(var(--u) * 2)); }
+.blink { animation: blink 0.6s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0.2; } }
+
+/* camp screen tabs */
+.tabs { display: flex; align-items: center; gap: calc(var(--u) * 3); }
+.tab { display: flex; align-items: center; gap: calc(var(--u) * 3); padding: calc(var(--u) * 3) calc(var(--u) * 6); background: var(--p1); color: var(--mute);
+  box-shadow: 0 0 0 var(--u) var(--line), inset var(--u) var(--u) 0 var(--p2); }
+.tab.on { background: var(--p2); color: var(--gold); box-shadow: 0 0 0 var(--u) var(--line), inset 0 calc(var(--u) * -1) 0 var(--gold), inset var(--u) var(--u) 0 var(--p3); }
+.cursor { animation: blink 0.5s steps(1) infinite; }

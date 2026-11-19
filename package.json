@@ -1,0 +1,29 @@
+{
+  "name": "rust-and-thunder",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build && node -e \"require('fs').copyFileSync('dist/index.html','RustAndThunder.html')\"",
+    "check": "tsc --noEmit",
+    "preview": "vite preview",
+    "shot": "node tools/shot.mjs",
+    "sim": "vite build --ssr tools/sim.ts --outDir dist-sim && node dist-sim/sim.js",
+    "aisim": "vite build --ssr tools/ai-sim.ts --outDir dist-sim/ai && node dist-sim/ai/ai-sim.js",
+    "abilsim": "vite build --ssr tools/abil-sim.ts --outDir dist-sim/abil && node dist-sim/abil/abil-sim.js",
+    "trickssim": "vite build --ssr tools/tricks-sim.ts --outDir dist-sim/tricks && node dist-sim/tricks/tricks-sim.js",
+    "bosssim": "vite build --ssr tools/boss-sim.ts --outDir dist-sim/boss && node dist-sim/boss/boss-sim.js",
+    "bosssim2": "vite build --ssr tools/boss-sim-2.ts --outDir dist-sim/boss2 && node dist-sim/boss2/boss-sim-2.js",
+    "bosssim3": "vite build --ssr tools/boss-sim-3.ts --outDir dist-sim/boss3 && node dist-sim/boss3/boss-sim-3.js",
+    "eventssim": "vite build --ssr tools/events-sim.ts --outDir dist-sim/events && node dist-sim/events/events-sim.js",
+    "balance": "vite build --ssr tools/balance.ts --outDir dist-sim/balance && node dist-sim/balance/balance.js",
+    "balance:many": "vite build --ssr tools/balance.ts --outDir dist-sim/balance && node tools/balance-many.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.64.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "vite-plugin-singlefile": "^2.3.3"
+  }
+}

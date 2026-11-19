@@ -1,0 +1,51 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Campaign UI - design system</title>
+<style>/*COMMON_CSS*/
+.sw { width: calc(var(--u) * 16); height: calc(var(--u) * 10); box-shadow: 0 0 0 var(--u) var(--line); }
+.cell { display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * 2); }
+</style></head>
+<body><div id="app"></div>
+<script>/*COMMON_JS*/
+const u = U;
+const sw = (c, n) => `<div class="cell"><div class="sw" style="background:${c}"></div>${T(n, S.sm, 'c-dim')}</div>`;
+const pal = [['#0b0c0e', 'LINE'], ['#1c1f24', 'PLATE'], ['#2b2f36', 'RAISED'], ['#4a4f58', 'BEVEL'], ['#f4efe2', 'INK'], ['#9aa0a8', 'DIM'], ['#5d636c', 'MUTE'],
+  ['#f8b800', 'GOLD P1'], ['#ffe08a', 'GOLD HI'], ['#c87000', 'ORANGE'], ['#7cd83a', 'GREEN P2'], ['#f0482a', 'ENEMY'], ['#6c9cff', 'INTEL'], ['#c6ccd4', 'STEEL']];
+const icons = ['scrap', 'parts', 'fpv', 'ambush', 'recon', 'repair', 'armour', 'engine', 'barrel', 'tracks', 'jammer', 'plough', 'town', 'depot', 'event', 'flag', 'mine', 'tank16'];
+document.getElementById('app').innerHTML = `
+<div style="position:absolute;inset:${8 * u}px;display:grid;grid-template-columns:1fr 1fr;gap:${10 * u}px">
+  <div class="col" style="gap:${10 * u}px">
+    <div class="plate riv"><div class="hdr">${T('PALETTE', S.sm, 'c-gold')}${T('16 COLOURS', S.sm, 'c-dim')}</div>
+      <div class="row" style="flex-wrap:wrap;gap:${4 * u}px">${pal.map(([c, n]) => sw(c, n)).join('')}</div></div>
+    <div class="plate riv"><div class="hdr">${T('TYPE', S.sm, 'c-gold')}${T('5x7 GLYPHS, WHOLE-PIXEL SCALES', S.sm, 'c-dim')}</div>
+      <div class="col">
+        <div class="row">${T('XXL', S.sm, 'c-mute')}<span class="sh">${T('245', S.xxl, 'gold')}</span><span class="sh">${T('REGION I', S.xl, 'steel')}</span></div>
+        <div class="row">${T('LG', S.sm, 'c-mute')}${T('FREE TYKHE POLE', S.lg, 'c-ink')}</div>
+        <div class="row">${T('MD', S.sm, 'c-mute')}${T('ARMOUR 7/10 · RELOAD 1.2', S.md, 'c-ink')}</div>
+        <div class="row">${T('SM', S.sm, 'c-mute')}${T('LABELS, HINTS AND FLAVOUR TEXT (50% MORE)', S.sm, 'c-dim')}</div>
+      </div></div>
+    <div class="plate riv"><div class="hdr">${T('ICONS', S.sm, 'c-gold')}${T('16x16, 1 PX OUTLINE, LIT TOP-LEFT', S.sm, 'c-dim')}</div>
+      <div class="row" style="flex-wrap:wrap;gap:${4 * u}px">${icons.map((n) => `<div class="cell">${icon(n, u + 1)}${T(n, S.sm, 'c-mute')}</div>`).join('')}
+        <div class="cell">${icon('chev', u + 1)}${T('VET', S.sm, 'c-mute')}</div>
+        <div class="cell">${icon('lock', u + 1)}${T('LOCK', S.sm, 'c-mute')}</div>
+        <div class="cell">${icon('dpad', u + 1, '', { dir: 'up' })}${T('PAD', S.sm, 'c-mute')}</div>
+        <div class="cell">${icon('diamond', u + 1)}${T('OBJ', S.sm, 'c-mute')}</div>
+        <div class="cell">${icon('house', u + 1)}${T('TOWN', S.sm, 'c-mute')}</div>
+      </div></div>
+  </div>
+  <div class="col" style="gap:${10 * u}px">
+    <div class="plate riv"><div class="hdr">${T('CREW PORTRAITS', S.sm, 'c-gold')}${T('32x32', S.sm, 'c-dim')}</div>
+      <div class="row" style="gap:${5 * u}px">${Object.keys(CREW).map((id) => `<div class="cell">${portrait(id, 2 * u, 'well')}${T(CREW[id].call, S.sm, 'c-dim')}</div>`).join('')}</div></div>
+    <div class="plate riv"><div class="hdr">${T('TANK + PARTS', S.sm, 'c-gold')}${T('32x32, PARTS SHOW ON THE SPRITE', S.sm, 'c-dim')}</div>
+      <div class="row" style="gap:${6 * u}px">
+        ${img(tankArt({}), 3 * u)}${img(tankArt({ armour: 1, engine: 1, tracks: 1, plough: 1 }), 3 * u)}${img(tankArt({ armour: 1, engine: 1, barrel: 1, tracks: 1, jammer: 1, plough: 1 }, 'green'), 3 * u)}
+      </div></div>
+    <div class="plate riv"><div class="hdr">${T('PLATES, KEYS, BARS', S.sm, 'c-gold')}</div>
+      <div class="col">
+        <div class="row">${kc('1')}${kc('TAB')}${kc('ENTER', 'gold')}<span class="tag">${T('IP', S.sm)}</span><span class="tag p2">${T('IIP', S.sm)}</span><span class="tag red">${T('ENEMY', S.sm)}</span><span class="tag blue">${T('INTEL', S.sm)}</span></div>
+        <div class="row">${segs(10, 7, 6, 4)}${segs(10, 4, 6, 4, 'green')}${segs(8, 3, 4, 2, 'blue')}</div>
+        <div class="row">${img(sweepArt(16, 0.35), 2 * u, 'well')}${img(ringArt(20, 0.6), 2 * u)}</div>
+      </div></div>
+  </div>
+</div>`;
+ready();
+</script></body></html>
